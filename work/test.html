@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -8,19 +7,42 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <header>...</header>
-  <main>
+  <header>
+    <nav>
+      <ul>
+        <li><a href="index.html">Главная</a></li>
+        <li><a href="instructions.html">Инструкции</a></li>
+        <li><a href="test.html" class="active" aria-current="page">Проверь себя</a></li>
+        <li><a href="map.html">Травмпункты</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="quiz-section">
     <h1>Проверь свои знания</h1>
     <div id="quiz-container">
-      <div id="question"></div>
-      <div id="options"></div>
-      <button id="next-btn" class="btn">Следующий вопрос</button>
-      <div id="result"></div>
+      <div id="quiz-content">
+        <div class="quiz-header">
+          <span id="quiz-progress-text" class="quiz-progress-text">Вопрос 1 из 5</span>
+          <div class="progress-bar-container">
+            <div id="progress-bar" class="progress-bar"></div>
+          </div>
+        </div>
+        <div id="question"></div>
+        <div id="options"></div>
+        <div id="explanation" class="quiz-explanation" style="display: none;"></div>
+        <div class="quiz-actions">
+          <button id="next-btn" class="btn" disabled>Следующий вопрос</button>
+        </div>
+      </div>
+      <div id="result" style="display: none;"></div>
     </div>
   </main>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-  <script src="js/firebase-config.js"></script>
+
+  <footer>
+    <p>© 2026 Команда «Здоровое будущее». Конкурс «Добрые Сайты 2026».</p>
+  </footer>
+
   <script src="js/test.js"></script>
 </body>
 </html>

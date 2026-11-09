@@ -1,10 +1,13 @@
-
 :root {
     --primary: #2e7d32;
+    --primary-hover: #1b5e20;
     --secondary: #1565c0;
+    --secondary-hover: #0d47a1;
     --bg: #f5f5f5;
     --text: #212121;
+    --text-muted: #555555;
     --contrast: #ffffff;
+    --border: #e0e0e0;
 }
 
 * {
@@ -18,6 +21,13 @@ body {
     background: var(--bg);
     color: var(--text);
     line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
 }
 
 header {
@@ -30,48 +40,88 @@ nav ul {
     gap: 1.5rem;
     list-style: none;
     justify-content: center;
+    flex-wrap: wrap;
 }
 
 nav a {
     color: var(--contrast);
     text-decoration: none;
     font-weight: bold;
-    padding: 0.5rem;
+    padding: 0.5rem 0.8rem;
     border-radius: 4px;
+    transition: background 0.2s;
 }
 
-nav a:focus, nav a:hover {
-    background: rgba(255,255,255,0.2);
+nav a:focus,
+nav a:hover {
+    background: rgba(255, 255, 255, 0.2);
     outline: 2px solid var(--contrast);
+}
+
+nav a.active,
+nav a[aria-current="page"] {
+    background: rgba(255, 255, 255, 0.25);
+    text-decoration: underline;
+    text-underline-offset: 4px;
 }
 
 .hero {
     text-align: center;
-    padding: 4rem 1rem;
+    padding: 4.5rem 1.5rem 4rem;
     background: linear-gradient(135deg, #e8f5e9, #bbdefb);
 }
 
 .hero h1 {
     font-size: 2.5rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
     color: var(--primary);
 }
 
-.btn {
-    display: inline-block;
-    background: var(--secondary);
-    color: var(--contrast);
-    padding: 0.8rem 2rem;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: bold;
-    margin-top: 1.5rem;
-    transition: background 0.3s;
+.hero p {
+    font-size: 1.15rem;
+    max-width: 620px;
+    margin: 0 auto 2.25rem;
+    color: #374151;
+    line-height: 1.5;
 }
 
-.btn:hover, .btn:focus {
-    background: #0d47a1;
+.hero .btn {
+    margin-top: 0;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    line-height: 1.2;
+    background: var(--secondary);
+    color: var(--contrast);
+    padding: 0.85rem 2.2rem;
+    border: none;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.05rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.25s, opacity 0.2s, transform 0.15s;
+}
+
+.btn:hover:not(:disabled),
+.btn:focus {
+    background: var(--secondary-hover);
     outline: 3px solid var(--primary);
+    transform: translateY(-1px);
+}
+
+.btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .features {
@@ -86,18 +136,214 @@ nav a:focus, nav a:hover {
     background: white;
     padding: 2rem;
     border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     max-width: 300px;
     text-align: center;
 }
 
-max-width: 600px {
+/* Quiz Styles */
+.quiz-section {
+    max-width: 680px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    width: 100%;
+}
+
+.quiz-section h1 {
+    text-align: center;
+    color: var(--primary);
+    margin-bottom: 1.5rem;
+    font-size: 2.2rem;
+}
+
+#quiz-container {
+    background: var(--contrast);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.quiz-header {
+    margin-bottom: 1.5rem;
+}
+
+.quiz-progress-text {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: var(--primary);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+#question {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 1.5rem;
+    line-height: 1.4;
+}
+
+#options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.option-btn {
+    width: 100%;
+    text-align: left;
+    padding: 1rem 1.25rem;
+    font-size: 1.05rem;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    background: #ffffff;
+    color: var(--text);
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 0.2s, background-color 0.2s, color 0.2s;
+}
+
+.option-btn:hover:not(:disabled) {
+    border-color: var(--secondary);
+    background: #f0f7ff;
+}
+
+.option-btn:focus-visible {
+    outline: 3px solid var(--secondary);
+    outline-offset: 2px;
+}
+
+.option-btn:disabled {
+    cursor: not-allowed;
+}
+
+.option-btn:disabled:not(.correct):not(.wrong) {
+    opacity: 0.6;
+}
+
+.option-btn.correct {
+    background-color: #2e7d32 !important;
+    border-color: #2e7d32 !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+.option-btn.wrong {
+    background-color: #d32f2f !important;
+    border-color: #d32f2f !important;
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+.quiz-explanation {
+    margin-bottom: 1.5rem;
+    padding: 1rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    background: #f8fafc;
+    border-left: 5px solid var(--secondary);
+}
+
+.quiz-explanation.correct {
+    background: #e8f5e9;
+    border-left-color: #2e7d32;
+    color: #1b5e20;
+}
+
+.quiz-explanation.wrong {
+    background: #ffebee;
+    border-left-color: #d32f2f;
+    color: #b71c1c;
+}
+
+.quiz-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.result-box {
+    text-align: center;
+    padding: 1rem 0;
+}
+
+.result-box h2 {
+    color: var(--primary);
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+}
+
+.result-score {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: var(--secondary);
+    margin-bottom: 0.75rem;
+}
+
+.result-box p {
+    color: var(--text-muted);
+    font-size: 1.05rem;
+    margin-bottom: 1.75rem;
+    line-height: 1.5;
+}
+
+/* Footer */
+footer {
+    background: #1e293b;
+    color: #f1f5f9;
+    text-align: center;
+    padding: 1.5rem 1rem;
+    font-size: 0.95rem;
+    margin-top: auto;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
     nav ul {
         flex-direction: column;
         align-items: center;
         gap: 0.5rem;
     }
+
+    .hero {
+        padding: 3rem 1rem 2.5rem;
+    }
+
     .hero h1 {
         font-size: 1.8rem;
+    }
+
+    .hero p {
+        font-size: 1rem;
+        margin-bottom: 1.75rem;
+    }
+
+    .quiz-section h1 {
+        font-size: 1.6rem;
+    }
+
+    #quiz-container {
+        padding: 1.25rem;
+    }
+
+    .option-btn {
+        padding: 0.85rem 1rem;
+        font-size: 0.95rem;
     }
 }
