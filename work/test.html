@@ -20,6 +20,9 @@
 
   <main class="quiz-section">
     <h1>Проверь свои знания</h1>
+    
+    <div id="best-score-badge" class="best-score-badge" style="display: none;"></div>
+
     <div id="quiz-container">
       <div id="quiz-content">
         <div class="quiz-header">
@@ -37,6 +40,9 @@
       </div>
       <div id="result" style="display: none;"></div>
     </div>
+
+    <!-- Скрытый холст для генерации сертификата -->
+    <canvas id="cert-canvas" width="1200" height="850" style="display: none;"></canvas>
   </main>
 
   <footer>

@@ -68,7 +68,217 @@ const nextBtn = document.getElementById('next-btn');
 const progressTextEl = document.getElementById('quiz-progress-text');
 const progressBarEl = document.getElementById('progress-bar');
 const resultEl = document.getElementById('result');
+const bestScoreBadgeEl = document.getElementById('best-score-badge');
 
+// --- Работа с localStorage ---
+function getBestScore() {
+    const stored = localStorage.getItem('first_aid_best_score');
+    if (stored === null) return null;
+    return {
+        score: parseInt(stored, 10),
+        total: parseInt(localStorage.getItem('first_aid_total_questions') || questions.length, 10),
+        date: localStorage.getItem('first_aid_best_date') || ''
+    };
+}
+
+function updateBestScoreBadge() {
+    if (!bestScoreBadgeEl) return;
+    const best = getBestScore();
+    if (best && !isNaN(best.score)) {
+        const percent = Math.round((best.score / best.total) * 100);
+        bestScoreBadgeEl.style.display = 'flex';
+        bestScoreBadgeEl.innerHTML = `
+            <span class="badge-text">
+                🏆 <strong>Ваш рекорд:</strong> ${best.score} из ${best.total} (${percent}%)${best.date ? ' • ' + best.date : ''}
+            </span>
+            <button type="button" class="badge-clear-btn" id="badge-clear-btn" title="Сбросить историю рекорда">Сбросить</button>
+        `;
+        const clearBtn = document.getElementById('badge-clear-btn');
+        if (clearBtn) {
+            clearBtn.onclick = () => {
+                if (confirm('Сбросить сохранённый рекорд теста?')) {
+                    localStorage.removeItem('first_aid_best_score');
+                    localStorage.removeItem('first_aid_best_date');
+                    localStorage.removeItem('first_aid_total_questions');
+                    updateBestScoreBadge();
+                }
+            };
+        }
+    } else {
+        bestScoreBadgeEl.style.display = 'none';
+        bestScoreBadgeEl.innerHTML = '';
+    }
+}
+
+// --- Генерация сертификата на HTML5 Canvas ---
+function drawCertificate(userName, userScore, total) {
+    const canvas = document.getElementById('cert-canvas');
+    if (!canvas) return '';
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // Очистка
+    ctx.clearRect(0, 0, width, height);
+
+    // Фоновый градиент
+    const bgGrad = ctx.createLinearGradient(0, 0, width, height);
+    bgGrad.addColorStop(0, '#fbfdfb');
+    bgGrad.addColorStop(0.5, '#ffffff');
+    bgGrad.addColorStop(1, '#f1f8f3');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, width, height);
+
+    // Внешняя зелёная рамка
+    ctx.strokeStyle = '#1b5e20';
+    ctx.lineWidth = 14;
+    ctx.strokeRect(30, 30, width - 60, height - 60);
+
+    // Внутренняя золотистая рамка
+    ctx.strokeStyle = '#c59b27';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(46, 46, width - 92, height - 92);
+
+    // Декоративные угловые точки
+    const corners = [
+        [46, 46], [width - 46, 46],
+        [46, height - 46], [width - 46, height - 46]
+    ];
+    corners.forEach(([cx, cy]) => {
+        ctx.fillStyle = '#c59b27';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    // Медицинская эмблема (круг с белым крестом)
+    const centerX = width / 2;
+    const emblemY = 125;
+    
+    ctx.beginPath();
+    ctx.arc(centerX, emblemY, 32, 0, Math.PI * 2);
+    ctx.fillStyle = '#2e7d32';
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#c59b27';
+    ctx.stroke();
+
+    // Белый крест внутри эмблемы
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(centerX - 6, emblemY - 18, 12, 36);
+    ctx.fillRect(centerX - 18, emblemY - 6, 36, 12);
+
+    // Заголовок конкурса
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 15px "Segoe UI", Arial, sans-serif';
+    ctx.fillStyle = '#4b5563';
+    ctx.fillText('КОНКУРС «ДОБРЫЕ САЙТЫ 2026» • ПРОЕКТ «ПЕРВАЯ ПОМОЩЬ РЯДОМ»', centerX, 190);
+
+    // Главный заголовок СЕРТИФИКАТ
+    ctx.font = 'bold 48px "Georgia", "Times New Roman", serif';
+    ctx.fillStyle = '#1b5e20';
+    ctx.fillText('С Е Р Т И Ф И К А Т', centerX, 255);
+
+    // Подзаголовок
+    ctx.font = '600 18px "Segoe UI", Arial, sans-serif';
+    ctx.fillStyle = '#2e7d32';
+    ctx.fillText('О ПРОХОЖДЕНИИ БАЗОВОГО ТЕСТИРОВАНИЯ ПО ПЕРВОЙ ПОМОЩИ', centerX, 290);
+
+    // Декоративная линия с ромбиком
+    ctx.strokeStyle = '#c59b27';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(centerX - 240, 315);
+    ctx.lineTo(centerX - 16, 315);
+    ctx.moveTo(centerX + 16, 315);
+    ctx.lineTo(centerX + 240, 315);
+    ctx.stroke();
+
+    ctx.fillStyle = '#c59b27';
+    ctx.beginPath();
+    ctx.moveTo(centerX, 309);
+    ctx.lineTo(centerX + 7, 315);
+    ctx.lineTo(centerX, 321);
+    ctx.lineTo(centerX - 7, 315);
+    ctx.closePath();
+    ctx.fill();
+
+    // Текст подтверждения
+    ctx.font = 'italic 21px "Georgia", "Times New Roman", serif';
+    ctx.fillStyle = '#4b5563';
+    ctx.fillText('Настоящим подтверждается, что', centerX, 370);
+
+    // Имя участника
+    ctx.font = 'bold 40px "Segoe UI", Arial, sans-serif';
+    ctx.fillStyle = '#0f172a';
+    ctx.fillText(userName, centerX, 430);
+
+    // Линия под именем
+    ctx.strokeStyle = '#c59b27';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(centerX - 280, 450);
+    ctx.lineTo(centerX + 280, 450);
+    ctx.stroke();
+
+    // Описание компетенций
+    ctx.font = '20px "Segoe UI", Arial, sans-serif';
+    ctx.fillStyle = '#374151';
+    ctx.fillText('успешно подтвердил(а) знание алгоритмов спасения жизни и правил', centerX, 500);
+    ctx.fillText('оказания первой доврачебной помощи в неотложных ситуациях.', centerX, 532);
+
+    // Результат в баллах
+    const percent = Math.round((userScore / total) * 100);
+    ctx.font = 'bold 22px "Segoe UI", Arial, sans-serif';
+    ctx.fillStyle = '#1565c0';
+    ctx.fillText(`Результат проверки: ${userScore} из ${total} правильных ответов (${percent}%)`, centerX, 585);
+
+    // Печать / штамп по центру внизу
+    const sealX = centerX;
+    const sealY = 705;
+    
+    ctx.beginPath();
+    ctx.arc(sealX, sealY, 46, 0, Math.PI * 2);
+    ctx.strokeStyle = '#c59b27';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(sealX, sealY, 40, 0, Math.PI * 2);
+    ctx.strokeStyle = '#2e7d32';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.fillStyle = '#1b5e20';
+    ctx.font = 'bold 12px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('★ ★ ★', sealX, sealY - 15);
+    ctx.font = 'bold 13px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('ПРОВЕРЕНО', sealX, sealY + 3);
+    ctx.font = '600 11px "Segoe UI", Arial, sans-serif';
+    ctx.fillText('2026', sealX, sealY + 19);
+
+    // Дата и ID сертификата
+    const today = new Date().toLocaleDateString('ru-RU');
+    let certId = localStorage.getItem('first_aid_cert_id');
+    if (!certId) {
+        certId = Math.floor(1000 + Math.random() * 9000).toString();
+        localStorage.setItem('first_aid_cert_id', certId);
+    }
+
+    ctx.textAlign = 'left';
+    ctx.font = '15px "Segoe UI", Arial, sans-serif';
+    ctx.fillStyle = '#4b5563';
+    ctx.fillText(`Дата выдачи: ${today}`, 100, 715);
+    ctx.fillText('Статус: Знания подтверждены', 100, 738);
+
+    ctx.textAlign = 'right';
+    ctx.fillText(`Сертификат № FA-2026-${certId}`, width - 100, 715);
+    ctx.fillText('Команда «Здоровое будущее»', width - 100, 738);
+
+    return canvas.toDataURL('image/png');
+}
+
+// --- Логика прохождения викторины ---
 function loadQuestion() {
     hasAnswered = false;
     const q = questions[currentQuestion];
@@ -134,6 +344,19 @@ function showResult() {
     const total = questions.length;
     let feedback = '';
 
+    // Сохранение рекорда в localStorage
+    const previousBest = getBestScore();
+    let isNewRecord = false;
+    const today = new Date().toLocaleDateString('ru-RU');
+
+    if (!previousBest || score > previousBest.score) {
+        localStorage.setItem('first_aid_best_score', score.toString());
+        localStorage.setItem('first_aid_total_questions', total.toString());
+        localStorage.setItem('first_aid_best_date', today);
+        isNewRecord = previousBest !== null && score > previousBest.score;
+        updateBestScoreBadge();
+    }
+
     if (score === total) {
         feedback = 'Отличный результат! Вы отлично знаете базовые алгоритмы спасения жизни.';
     } else if (score >= 3) {
@@ -142,16 +365,79 @@ function showResult() {
         feedback = 'В экстренной ситуации важна каждая секунда. Обязательно изучите инструкции в нашем разделе обучения.';
     }
 
+    const savedName = localStorage.getItem('first_aid_user_name') || '';
+
+    let certBlockHtml = '';
+    if (score >= 3) {
+        certBlockHtml = `
+            <div class="certificate-section">
+                <h3>🎓 Именной сертификат</h3>
+                <p>Вы успешно сдали норматив! Введите ваше имя и фамилию для формирования электронного сертификата:</p>
+                <div class="cert-input-group">
+                    <input type="text" id="cert-name-input" placeholder="Имя и Фамилия (например: Иван Петров)" maxlength="40" value="${savedName}">
+                    <button type="button" id="generate-cert-btn" class="btn">Получить сертификат</button>
+                </div>
+                <div id="cert-error" class="cert-error" style="display: none;"></div>
+                
+                <div id="cert-preview-box" class="cert-preview-box" style="display: none;">
+                    <div class="cert-image-wrapper">
+                        <img id="cert-image-preview" alt="Именной сертификат" />
+                    </div>
+                    <div class="cert-download-actions">
+                        <a id="cert-download-btn" class="btn btn-download" download="Сертификат_Первая_помощь.png">📥 Скачать сертификат (PNG)</a>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else {
+        certBlockHtml = `
+            <div class="cert-locked-notice">
+                🔒 <strong>Именной сертификат:</strong> выдается при результате от 3 правильных ответов из ${total}. Ознакомьтесь с инструкциями на сайте и пройдите тест повторно!
+            </div>
+        `;
+    }
+
     resultEl.innerHTML = `
         <div class="result-box">
             <h2>Тест завершён!</h2>
+            ${isNewRecord ? '<div style="color: #2e7d32; font-weight: bold; margin-bottom: 0.5rem;">🎉 Поздравляем, новый рекорд!</div>' : ''}
             <div class="result-score">Ваш результат: ${score} из ${total}</div>
             <p>${feedback}</p>
             <button id="restart-btn" class="btn" type="button">Пройти тест заново</button>
+            ${certBlockHtml}
         </div>
     `;
 
     document.getElementById('restart-btn').onclick = restartQuiz;
+
+    if (score >= 3) {
+        const generateBtn = document.getElementById('generate-cert-btn');
+        const nameInput = document.getElementById('cert-name-input');
+        const certError = document.getElementById('cert-error');
+        const previewBox = document.getElementById('cert-preview-box');
+        const imagePreview = document.getElementById('cert-image-preview');
+        const downloadBtn = document.getElementById('cert-download-btn');
+
+        generateBtn.onclick = () => {
+            const rawName = nameInput.value.trim();
+            if (rawName.length < 2) {
+                certError.textContent = 'Пожалуйста, введите корректное имя и фамилию (минимум 2 символа).';
+                certError.style.display = 'block';
+                return;
+            }
+
+            certError.style.display = 'none';
+            localStorage.setItem('first_aid_user_name', rawName);
+
+            const dataUrl = drawCertificate(rawName, score, total);
+            imagePreview.src = dataUrl;
+            downloadBtn.href = dataUrl;
+            downloadBtn.download = `Сертификат_${rawName.replace(/\s+/g, '_')}.png`;
+            previewBox.style.display = 'block';
+
+            previewBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        };
+    }
 }
 
 function restartQuiz() {
@@ -159,6 +445,7 @@ function restartQuiz() {
     score = 0;
     resultEl.style.display = 'none';
     quizContentEl.style.display = 'block';
+    updateBestScoreBadge();
     loadQuestion();
 }
 
@@ -173,4 +460,6 @@ nextBtn.onclick = () => {
     }
 };
 
+// Инициализация при загрузке
+updateBestScoreBadge();
 loadQuestion();
