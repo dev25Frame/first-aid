@@ -5,17 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Тест: Первая помощь</title>
   <link rel="stylesheet" href="css/style.css">
+  <script>
+    (function(){
+      try {
+        var s = localStorage.getItem('theme');
+        var p = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var t = (s === 'dark' || (!s && p)) ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch(e) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    })();
+  </script>
 </head>
 <body>
   <header>
-    <nav>
-      <ul>
-        <li><a href="index.html">Главная</a></li>
-        <li><a href="instructions.html">Инструкции</a></li>
-        <li><a href="test.html" class="active" aria-current="page">Проверь себя</a></li>
-        <li><a href="map.html">Травмпункты</a></li>
-      </ul>
-    </nav>
+    <div class="nav-container">
+      <a href="index.html" class="brand">
+        <span class="brand-icon">✚</span>
+        <span>Первая помощь</span>
+      </a>
+      <nav>
+        <ul>
+          <li><a href="index.html">Главная</a></li>
+          <li><a href="instructions.html">Инструкции</a></li>
+          <li><a href="test.html" class="active" aria-current="page">Проверь себя</a></li>
+        </ul>
+      </nav>
+      <button id="theme-toggle" class="theme-toggle-btn" type="button" aria-label="Переключить тему оформления" title="Сменить тему">
+        <span class="theme-toggle-icon">🌙</span>
+      </button>
+    </div>
   </header>
 
   <main class="quiz-section">
@@ -49,6 +69,8 @@
     <p>© 2026 Команда «Здоровое будущее». Конкурс «Добрые Сайты 2026».</p>
   </footer>
 
+  <!-- Theme Management -->
+  <script src="js/theme.js"></script>
   <script src="js/test.js"></script>
 </body>
 </html>

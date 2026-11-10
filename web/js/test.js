@@ -121,71 +121,71 @@ function drawCertificate(userName, userScore, total) {
     // Очистка
     ctx.clearRect(0, 0, width, height);
 
-    // Фоновый градиент
+    // Фоновый градиент Warm Ivory (--bg0_h, --bg0, --bg0_s)
     const bgGrad = ctx.createLinearGradient(0, 0, width, height);
-    bgGrad.addColorStop(0, '#fbfdfb');
-    bgGrad.addColorStop(0.5, '#ffffff');
-    bgGrad.addColorStop(1, '#f1f8f3');
+    bgGrad.addColorStop(0, '#f8faf0');
+    bgGrad.addColorStop(0.5, '#f1f3e0');
+    bgGrad.addColorStop(1, '#e5eac9');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, width, height);
 
-    // Внешняя зелёная рамка
-    ctx.strokeStyle = '#1b5e20';
-    ctx.lineWidth = 14;
+    // Внешняя рамка (--faded_green #425a37)
+    ctx.strokeStyle = '#425a37';
+    ctx.lineWidth = 16;
     ctx.strokeRect(30, 30, width - 60, height - 60);
 
-    // Внутренняя золотистая рамка
-    ctx.strokeStyle = '#c59b27';
+    // Внутренняя рамка (--bg2 #bed0a1)
+    ctx.strokeStyle = '#bed0a1';
     ctx.lineWidth = 3;
     ctx.strokeRect(46, 46, width - 92, height - 92);
 
-    // Декоративные угловые точки
+    // Декоративные угловые точки (--neutral_green #5a794c)
     const corners = [
         [46, 46], [width - 46, 46],
         [46, height - 46], [width - 46, height - 46]
     ];
     corners.forEach(([cx, cy]) => {
-        ctx.fillStyle = '#c59b27';
+        ctx.fillStyle = '#5a794c';
         ctx.beginPath();
         ctx.arc(cx, cy, 7, 0, Math.PI * 2);
         ctx.fill();
     });
 
-    // Медицинская эмблема (круг с белым крестом)
+    // Медицинская эмблема (круг с крестом)
     const centerX = width / 2;
     const emblemY = 125;
     
     ctx.beginPath();
     ctx.arc(centerX, emblemY, 32, 0, Math.PI * 2);
-    ctx.fillStyle = '#2e7d32';
+    ctx.fillStyle = '#d2dcb6';
     ctx.fill();
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = '#c59b27';
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#425a37';
     ctx.stroke();
 
-    // Белый крест внутри эмблемы
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(centerX - 6, emblemY - 18, 12, 36);
-    ctx.fillRect(centerX - 18, emblemY - 6, 36, 12);
+    // Крест внутри эмблемы
+    ctx.fillStyle = '#425a37';
+    ctx.fillRect(centerX - 5, emblemY - 17, 10, 34);
+    ctx.fillRect(centerX - 17, emblemY - 5, 34, 10);
 
     // Заголовок конкурса
     ctx.textAlign = 'center';
     ctx.font = 'bold 15px "Segoe UI", Arial, sans-serif';
-    ctx.fillStyle = '#4b5563';
+    ctx.fillStyle = '#556252';
     ctx.fillText('КОНКУРС «ДОБРЫЕ САЙТЫ 2026» • ПРОЕКТ «ПЕРВАЯ ПОМОЩЬ РЯДОМ»', centerX, 190);
 
     // Главный заголовок СЕРТИФИКАТ
     ctx.font = 'bold 48px "Georgia", "Times New Roman", serif';
-    ctx.fillStyle = '#1b5e20';
+    ctx.fillStyle = '#425a37';
     ctx.fillText('С Е Р Т И Ф И К А Т', centerX, 255);
 
     // Подзаголовок
     ctx.font = '600 18px "Segoe UI", Arial, sans-serif';
-    ctx.fillStyle = '#2e7d32';
+    ctx.fillStyle = '#556252';
     ctx.fillText('О ПРОХОЖДЕНИИ БАЗОВОГО ТЕСТИРОВАНИЯ ПО ПЕРВОЙ ПОМОЩИ', centerX, 290);
 
     // Декоративная линия с ромбиком
-    ctx.strokeStyle = '#c59b27';
+    ctx.strokeStyle = '#a1bc98';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(centerX - 240, 315);
@@ -194,7 +194,7 @@ function drawCertificate(userName, userScore, total) {
     ctx.lineTo(centerX + 240, 315);
     ctx.stroke();
 
-    ctx.fillStyle = '#c59b27';
+    ctx.fillStyle = '#bed0a1';
     ctx.beginPath();
     ctx.moveTo(centerX, 309);
     ctx.lineTo(centerX + 7, 315);
@@ -205,16 +205,16 @@ function drawCertificate(userName, userScore, total) {
 
     // Текст подтверждения
     ctx.font = 'italic 21px "Georgia", "Times New Roman", serif';
-    ctx.fillStyle = '#4b5563';
+    ctx.fillStyle = '#445141';
     ctx.fillText('Настоящим подтверждается, что', centerX, 370);
 
     // Имя участника
     ctx.font = 'bold 40px "Segoe UI", Arial, sans-serif';
-    ctx.fillStyle = '#0f172a';
+    ctx.fillStyle = '#21261f';
     ctx.fillText(userName, centerX, 430);
 
     // Линия под именем
-    ctx.strokeStyle = '#c59b27';
+    ctx.strokeStyle = '#bed0a1';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(centerX - 280, 450);
@@ -223,14 +223,14 @@ function drawCertificate(userName, userScore, total) {
 
     // Описание компетенций
     ctx.font = '20px "Segoe UI", Arial, sans-serif';
-    ctx.fillStyle = '#374151';
+    ctx.fillStyle = '#344031';
     ctx.fillText('успешно подтвердил(а) знание алгоритмов спасения жизни и правил', centerX, 500);
     ctx.fillText('оказания первой доврачебной помощи в неотложных ситуациях.', centerX, 532);
 
     // Результат в баллах
     const percent = Math.round((userScore / total) * 100);
     ctx.font = 'bold 22px "Segoe UI", Arial, sans-serif';
-    ctx.fillStyle = '#1565c0';
+    ctx.fillStyle = '#425a37';
     ctx.fillText(`Результат проверки: ${userScore} из ${total} правильных ответов (${percent}%)`, centerX, 585);
 
     // Печать / штамп по центру внизу
@@ -239,17 +239,17 @@ function drawCertificate(userName, userScore, total) {
     
     ctx.beginPath();
     ctx.arc(sealX, sealY, 46, 0, Math.PI * 2);
-    ctx.strokeStyle = '#c59b27';
+    ctx.strokeStyle = '#bed0a1';
     ctx.lineWidth = 3;
     ctx.stroke();
 
     ctx.beginPath();
     ctx.arc(sealX, sealY, 40, 0, Math.PI * 2);
-    ctx.strokeStyle = '#2e7d32';
+    ctx.strokeStyle = '#425a37';
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    ctx.fillStyle = '#1b5e20';
+    ctx.fillStyle = '#425a37';
     ctx.font = 'bold 12px "Segoe UI", Arial, sans-serif';
     ctx.fillText('★ ★ ★', sealX, sealY - 15);
     ctx.font = 'bold 13px "Segoe UI", Arial, sans-serif';
@@ -267,7 +267,7 @@ function drawCertificate(userName, userScore, total) {
 
     ctx.textAlign = 'left';
     ctx.font = '15px "Segoe UI", Arial, sans-serif';
-    ctx.fillStyle = '#4b5563';
+    ctx.fillStyle = '#556252';
     ctx.fillText(`Дата выдачи: ${today}`, 100, 715);
     ctx.fillText('Статус: Знания подтверждены', 100, 738);
 
@@ -297,12 +297,12 @@ function loadQuestion() {
     explanationEl.textContent = '';
 
     nextBtn.disabled = true;
-    nextBtn.textContent = currentNumber === total ? 'Завершить тест' : 'Следующий вопрос';
+    nextBtn.innerHTML = currentNumber === total ? '<span>Завершить тест</span> <span>✓</span>' : '<span>Следующий вопрос</span> <span>&rarr;</span>';
 
     q.options.forEach((opt, index) => {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.textContent = opt;
+        btn.innerHTML = `<span>${opt}</span><span class="opt-status-icon" style="opacity:0.4; font-size:1.05rem;">⚪</span>`;
         btn.classList.add('option-btn');
         btn.onclick = () => selectAnswer(index, btn);
         optionsEl.appendChild(btn);
@@ -320,6 +320,11 @@ function selectAnswer(selectedIndex, selectedBtn) {
         btn.disabled = true;
         if (index === q.correct) {
             btn.classList.add('correct');
+            const icon = btn.querySelector('.opt-status-icon');
+            if (icon) {
+                icon.textContent = '✅';
+                icon.style.opacity = '1';
+            }
         }
     });
 
@@ -329,6 +334,11 @@ function selectAnswer(selectedIndex, selectedBtn) {
         explanationEl.innerHTML = `<strong>Верно!</strong> ${q.explanation}`;
     } else {
         selectedBtn.classList.add('wrong');
+        const icon = selectedBtn.querySelector('.opt-status-icon');
+        if (icon) {
+            icon.textContent = '❌';
+            icon.style.opacity = '1';
+        }
         explanationEl.className = 'quiz-explanation wrong';
         explanationEl.innerHTML = `<strong>Неверно.</strong> ${q.explanation}`;
     }
