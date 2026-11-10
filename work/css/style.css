@@ -1,13 +1,63 @@
 :root {
-    --primary: #2e7d32;
-    --primary-hover: #1b5e20;
-    --secondary: #1565c0;
-    --secondary-hover: #0d47a1;
-    --bg: #f5f5f5;
-    --text: #212121;
-    --text-muted: #555555;
-    --contrast: #ffffff;
-    --border: #e0e0e0;
+  /* ==========================================================================
+     User Defined Botanical / Everforest Palette
+     ========================================================================== */
+  /* --- BG --- */
+  --bg0_h: #f8faf0;
+  --bg0: #f1f3e0;
+  --bg0_s: #e5eac9;
+  --bg1: #d2dcb6;
+  --bg2: #bed0a1;
+  --bg3: #a1bc98;
+  --bg4: #8da684;
+  /* --- FG --- */
+  --fg0: #21261f;
+  --fg1: #263124;
+  --fg2: #344031;
+  --fg3: #445141;
+  --fg4: #556252;
+  /* --- GRAY --- */
+  --gray: #788773;
+  --gray_alt: #677364;
+  /* --- RED --- */
+  --neutral_red: #a84542;
+  --bright_red: #c65450;
+  --faded_red: #7e3230;
+  /* --- GREEN --- */
+  --neutral_green: #5a794c;
+  --bright_green: #739b60;
+  --faded_green: #425a37;
+  /* --- YELLOW --- */
+  --neutral_yellow: #a6822c;
+  --bright_yellow: #c49c36;
+  --faded_yellow: #7a5f20;
+  /* --- BLUE --- */
+  --neutral_blue: #477685;
+  --bright_blue: #5993a6;
+  --faded_blue: #335763;
+  /* --- PURPLE --- */
+  --neutral_purple: #825b7a;
+  --bright_purple: #9e7195;
+  --faded_purple: #61435b;
+  /* --- AQUA --- */
+  --neutral_aqua: #4e8071;
+  --bright_aqua: #639f8d;
+  --faded_aqua: #3a6155;
+  /* --- ORANGE --- */
+  --neutral_orange: #ba6630;
+  --bright_orange: #da7b3c;
+  --faded_orange: #8d4b21;
+
+  /* Theme Tokens */
+  --primary: var(--faded_green);
+  --primary-hover: var(--fg2);
+  --secondary: var(--neutral_green);
+  --secondary-hover: var(--faded_green);
+  --bg: var(--bg0);
+  --text: var(--fg0);
+  --text-muted: var(--fg4);
+  --contrast: #ffffff;
+  --border: var(--bg2);
 }
 
 * {
@@ -68,7 +118,7 @@ nav a[aria-current="page"] {
 .hero {
     text-align: center;
     padding: 4.5rem 1.5rem 4rem;
-    background: linear-gradient(135deg, #e8f5e9, #bbdefb);
+    background: linear-gradient(135deg, var(--bg0_s), var(--bg1));
 }
 
 .hero h1 {
@@ -81,7 +131,7 @@ nav a[aria-current="page"] {
     font-size: 1.15rem;
     max-width: 620px;
     margin: 0 auto 2.25rem;
-    color: #374151;
+    color: var(--fg2);
     line-height: 1.5;
 }
 
@@ -454,8 +504,8 @@ nav a[aria-current="page"] {
 
 /* Footer */
 footer {
-    background: #1e293b;
-    color: #f1f5f9;
+    background: var(--fg1);
+    color: var(--bg0_h);
     text-align: center;
     padding: 1.5rem 1rem;
     font-size: 0.95rem;

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Инструкции по первой помощи • Material You 3</title>
+  <link rel="stylesheet" href="css/m3-style.css">
+  <style>
+    .m3-step-card {
+      background: var(--md-sys-color-surface-container-low);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      border-radius: var(--md-shape-xl);
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+      transition: all var(--md-duration-short);
+    }
+    .m3-step-card:hover {
+      background: var(--md-sys-color-surface-container);
+    }
+    .m3-step-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 0.8rem;
+      border-radius: var(--md-shape-full);
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+    .badge-urgent {
+      background: var(--md-sys-color-tertiary-container);
+      color: var(--md-sys-color-on-tertiary-container);
+    }
+    .badge-safe {
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+    }
+    .m3-steps-list {
+      margin: 1rem 0;
+      padding-left: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .m3-warning-box {
+      background: var(--md-sys-color-error-container);
+      color: var(--md-sys-color-on-error-container);
+      padding: 1rem 1.25rem;
+      border-radius: var(--md-shape-md);
+      font-size: 0.95rem;
+      margin-top: 1rem;
+      border-left: 4px solid var(--md-sys-color-error);
+    }
+    /* CPR Metronome */
+    .m3-metronome-card {
+      background: linear-gradient(135deg, var(--md-sys-color-primary), #233522);
+      color: #ffffff;
+      border-radius: var(--md-shape-xxl);
+      padding: 2rem;
+      text-align: center;
+      margin: 2rem 0 3rem;
+      box-shadow: var(--md-elevation-3);
+    }
+    .heart-pulse {
+      font-size: 3.5rem;
+      display: inline-block;
+      transition: transform 0.1s;
+    }
+    .heart-pulse.beat {
+      transform: scale(1.3);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <header class="m3-header">
+    <div class="m3-nav-container">
+      <a href="index.html" class="m3-brand">
+        <div class="m3-brand-icon">✚</div>
+        <span>Первая помощь</span>
+      </a>
+      <nav>
+        <ul class="m3-nav-list">
+          <li><a href="index.html" class="m3-nav-link">Главная</a></li>
+          <li><a href="instructions.html" class="m3-nav-link active">Инструкции</a></li>
+          <li><a href="test.html" class="m3-nav-link">Тест</a></li>
+          <li><a href="map.html" class="m3-nav-link">Травмпункты</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="m3-features-container" style="margin-top: 2rem;">
+    <div class="m3-section-header">
+      <h2>Базовые алгоритмы спасения жизни</h2>
+      <p>Официальные протоколы первой доврачебной помощи. Выберите категорию:</p>
+    </div>
+
+    <!-- M3 Category Filter Chips -->
+    <div class="m3-chips-group">
+      <button class="m3-chip active" data-filter="all">🌟 Все инструкции</button>
+      <button class="m3-chip" data-filter="cpr">💓 Сердечно-лёгочная реанимация</button>
+      <button class="m3-chip" data-filter="bleeding">🩸 Кровотечения</button>
+      <button class="m3-chip" data-filter="burns">🔥 Ожоги</button>
+      <button class="m3-chip" data-filter="faint">😵 Потеря сознания</button>
+      <button class="m3-chip" data-filter="fracture">🦴 Травмы и переломы</button>
+    </div>
+
+    <!-- Interactive CPR Metronome Widget -->
+    <div class="m3-metronome-card" id="cpr-widget">
+      <div style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.85; margin-bottom: 0.5rem;">
+        Интерактивный инструмент первой помощи
+      </div>
+      <h3 style="font-size: 1.8rem; font-weight: 800; margin-bottom: 0.5rem;">Аудио-метроном СЛР (110 ударов/мин)</h3>
+      <p style="max-width: 550px; margin: 0 auto 1.5rem; opacity: 0.9;">
+        Ритм компрессий грудной клетки критически важен. Нажмите кнопку, чтобы запустить звуковой и визуальный пульс правильного темпа непрямого массажа сердца.
+      </p>
+
+      <div class="heart-pulse" id="heart-icon">❤️</div>
+      
+      <div style="margin-top: 1.5rem;">
+        <button id="toggle-metronome-btn" class="m3-btn m3-btn-tonal" style="background:#ffffff; color:#1a1c18; padding: 0.9rem 2.2rem;">
+          <span id="metro-btn-icon">▶️</span>
+          <span id="metro-btn-text">Включить ритм СЛР</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Instructions List -->
+    <div id="instructions-container">
+      
+      <!-- Card: CPR -->
+      <article class="m3-step-card" data-category="cpr">
+        <span class="m3-step-badge badge-urgent">⚡ Экстренно: нет сознания и дыхания</span>
+        <h3>Сердечно-лёгочная реанимация (СЛР) для взрослых</h3>
+        <p>Проводится немедленно при отсутствии признаков жизни (нет дыхания и реакции на раздражители).</p>
+        <ol class="m3-steps-list">
+          <li><strong>Убедитесь в безопасности:</strong> осмотритесь вокруг, нет ли угрозы для вас.</li>
+          <li><strong>Вызовите скорую помощь (103 или 112)</strong> или громко прикажите очевидцу вызвать.</li>
+          <li><strong>Положите пострадавшего</strong> на твёрдую ровную поверхность на спину.</li>
+          <li><strong>Начните компрессии:</strong> основание ладони на центр грудины, руки прямые в локтях. Глубина 5–6 см.</li>
+          <li><strong>Соотношение: 30 нажатий со скоростью 100–120 в минуту, затем 2 выдоха</strong> «рот в рот» через защитную салфетку.</li>
+          <li>Не прерывайте компрессии более чем на 10 секунд до приезда медиков или появления дыхания.</li>
+        </ol>
+        <div class="m3-warning-box">
+          ⚠️ <strong>Ошибки:</strong> Не сгибайте руки в локтях. Если нет маски или вы не умеете делать вдохи — проводите <em>непрерывный непрямой массаж сердца без остановки</em>!
+        </div>
+      </article>
+
+      <!-- Card: Bleeding -->
+      <article class="m3-step-card" data-category="bleeding">
+        <span class="m3-step-badge badge-urgent">🩸 Опасно для жизни</span>
+        <h3>Сильное кровотечение из раны</h3>
+        <p>Главная цель — остановить потерю крови до прибытия медицинских работников.</p>
+        <ol class="m3-steps-list">
+          <li><strong>Прямое давление:</strong> немедленно прижмите рану рукой через чистую ткань или салфетку.</li>
+          <li><strong>Давящая повязка:</strong> плотно забинтуйте место повреждения бинтом или эластичным жгутом-повязкой.</li>
+          <li><strong>Кровоостанавливающий жгут:</strong> применяется <em>только при артериальном кровотечении</em> (кровь бьёт фонтанирующей алой струёй).</li>
+          <li>Накладывайте жгут выше раны, на одежду или прокладку, с обязательной запиской со временем наложения.</li>
+        </ol>
+        <div class="m3-warning-box">
+          ⚠️ <strong>Ошибки:</strong> Не лейте в открытую глубокую рану спирт, йод или зелёнку. Максимальное время жгута: летом — до 60 мин, зимой — до 30 мин.
+        </div>
+      </article>
+
+      <!-- Card: Burns -->
+      <article class="m3-step-card" data-category="burns">
+        <span class="m3-step-badge badge-safe">🔥 Бытовая травма</span>
+        <h3>Термический ожог кипятком или паром</h3>
+        <p>Правильные действия в первые 10 минут снижают глубину поражения кожи в разы.</p>
+        <ol class="m3-steps-list">
+          <li><strong>Прекратите действие тепла:</strong> аккуратно удалите источник опасности. Не сдирайте прилипшую ткань!</li>
+          <li><strong>Охлаждение:</strong> поместите зону ожога под прохладную (15–20°C) проточную воду на <strong>15–20 минут</strong>.</li>
+          <li><strong>Защита:</strong> наложите сухую стерильную повязку или чистую ткань без давления.</li>
+          <li><strong>Обильное питьё:</strong> давайте пострадавшему тёплую воду или минералку.</li>
+        </ol>
+        <div class="m3-warning-box">
+          ⚠️ <strong>Категорически запрещено:</strong> смазывать свежий ожог маслом, сметаной, жирными мазями или прикладывать кусковой лёд непосредственно к коже!
+        </div>
+      </article>
+
+      <!-- Card: Faint -->
+      <article class="m3-step-card" data-category="faint">
+        <span class="m3-step-badge badge-safe">😵 Нарушение сознания</span>
+        <h3>Обморок и бессознательное состояние при наличии дыхания</h3>
+        <p>Если человек потерял сознание, но пульс и дыхание сохранены.</p>
+        <ol class="m3-steps-list">
+          <li><strong>Устойчивое боковое положение:</strong> согните ближнюю руку пострадавшего под прямым углом, дальнюю прижмите к щеке, согните дальнюю ногу в колене и поверните человека на бок.</li>
+          <li>Это предотвратит западение языка и удушье рвотными массами.</li>
+          <li>Обеспечьте приток свежего воздуха: расстегните воротник, ослабьте ремень.</li>
+          <li>Контролируйте дыхание каждую минуту до приезда скорой помощи.</li>
+        </ol>
+      </article>
+
+      <!-- Card: Fracture -->
+      <article class="m3-step-card" data-category="fracture">
+        <span class="m3-step-badge badge-safe">🦴 Опорно-двигательный аппарат</span>
+        <h3>Подозрение на перелом или сильный вывих</h3>
+        <p>Правильная иммобилизация предотвращает смещение осколков и болевой шок.</p>
+        <ol class="m3-steps-list">
+          <li><strong>Обездвижьте повреждённую конечность:</strong> зафиксируйте два соседних сустава (выше и ниже места перелома).</li>
+          <li>Используйте подручные шины (дощечки, свёрнутые журналы) поверх мягкой одежды.</li>
+          <li>Приложите холод через ткань (пакет со льдом) для уменьшения отёка и боли.</li>
+          <li>Не пытайтесь самостоятельно вправлять кости или суставы!</li>
+        </ol>
+      </article>
+
+    </div>
+  </main>
+
+  <!-- M3 Footer -->
+  <footer class="m3-footer">
+    <div class="m3-footer-brand">Команда «Здоровое будущее» • Конкурс «Добрые Сайты 2026»</div>
+    <p>Интерактивные инструкции первой помощи в дизайн-системе Google Material You 3 Expressive.</p>
+  </footer>
+
+  <script>
+    // Фильтрация по чипам
+    const chips = document.querySelectorAll('.m3-chip');
+    const cards = document.querySelectorAll('#instructions-container article');
+
+    chips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        chips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+
+        const filter = chip.getAttribute('data-filter');
+        cards.forEach(card => {
+          if (filter === 'all' || card.getAttribute('data-category') === filter) {
+            card.style.display = 'block';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      });
+    });
+
+    // Аудио-метроном СЛР (110 BPM) через Web Audio API
+    let audioCtx = null;
+    let timerId = null;
+    let isPlaying = false;
+    const bpm = 110;
+    const intervalMs = (60 / bpm) * 1000;
+
+    const toggleBtn = document.getElementById('toggle-metronome-btn');
+    const metroBtnIcon = document.getElementById('metro-btn-icon');
+    const metroBtnText = document.getElementById('metro-btn-text');
+    const heartIcon = document.getElementById('heart-icon');
+
+    function playTick() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+
+      // Генерация мягкого щелчка/тона
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.08);
+
+      // Визуальный пульс
+      heartIcon.classList.add('beat');
+      setTimeout(() => heartIcon.classList.remove('beat'), 100);
+    }
+
+    toggleBtn.addEventListener('click', () => {
+      if (isPlaying) {
+        clearInterval(timerId);
+        timerId = null;
+        isPlaying = false;
+        metroBtnIcon.textContent = '▶️';
+        metroBtnText.textContent = 'Включить ритм СЛР';
+      } else {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        playTick();
+        timerId = setInterval(playTick, intervalMs);
+        isPlaying = true;
+        metroBtnIcon.textContent = '⏹️';
+        metroBtnText.textContent = 'Остановить ритм';
+      }
+    });
+  </script>
+
+</body>
+</html>
