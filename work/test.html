@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Тест: Первая помощь</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script>
+    (function(){
+      try {
+        var s = localStorage.getItem('theme');
+        var p = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var t = (s === 'dark' || (!s && p)) ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch(e) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    })();
+  </script>
+</head>
+<body>
+  <header>
+    <div class="nav-container">
+      <a href="index.html" class="brand">
+        <span class="brand-icon">✚</span>
+        <span>Первая помощь</span>
+      </a>
+      <nav>
+        <ul>
+          <li><a href="index.html">Главная</a></li>
+          <li><a href="instructions.html">Инструкции</a></li>
+          <li><a href="test.html" class="active" aria-current="page">Проверь себя</a></li>
+        </ul>
+      </nav>
+      <button id="theme-toggle" class="theme-toggle-btn" type="button" aria-label="Переключить тему оформления" title="Сменить тему">
+        <span class="theme-toggle-icon">🌙</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="quiz-section">
+    <h1>Проверь свои знания</h1>
+    
+    <div id="best-score-badge" class="best-score-badge" style="display: none;"></div>
+
+    <div id="quiz-container">
+      <div id="quiz-content">
+        <div class="quiz-header">
+          <span id="quiz-progress-text" class="quiz-progress-text">Вопрос 1 из 5</span>
+          <div class="progress-bar-container">
+            <div id="progress-bar" class="progress-bar"></div>
+          </div>
+        </div>
+        <div id="question"></div>
+        <div id="options"></div>
+        <div id="explanation" class="quiz-explanation" style="display: none;"></div>
+        <div class="quiz-actions">
+          <button id="next-btn" class="btn" disabled>Следующий вопрос</button>
+        </div>
+      </div>
+      <div id="result" style="display: none;"></div>
+    </div>
+
+    <!-- Скрытый холст для генерации сертификата -->
+    <canvas id="cert-canvas" width="1200" height="850" style="display: none;"></canvas>
+  </main>
+
+  <footer>
+    <p>© 2026 Команда «Здоровое будущее». Конкурс «Добрые Сайты 2026».</p>
+  </footer>
+
+  <!-- Theme Management -->
+  <script src="js/theme.js"></script>
+  <script src="js/test.js"></script>
+</body>
+</html>
