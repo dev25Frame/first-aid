@@ -523,6 +523,281 @@ nav a[aria-current="page"] {
 }
 
 /* ==========================================================================
+   Video Showcase Section (M3 Responsive Coverflow / Carousel)
+   ========================================================================== */
+.video-section {
+  max-width: 1100px;
+  margin: 0 auto 3.5rem;
+  padding: 3.5rem 2rem 3rem;
+  background: linear-gradient(145deg, var(--bg0_s), var(--bg1));
+  border-radius: var(--m3-shape-extra-large);
+  border: 1px solid var(--bg2);
+  text-align: center;
+  box-shadow: var(--m3-elevation-1);
+}
+
+.video-section h2 {
+  font-size: clamp(2rem, 4.5vw, 2.8rem);
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--fg1);
+  letter-spacing: -0.02em;
+  margin: 0 auto 1.75rem;
+}
+
+.video-carousel {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto 1.5rem;
+  outline: none;
+}
+
+/* Side Peek Cards (as designed in competition mockup) */
+.video-side-card {
+  flex: 0 0 15%;
+  border-radius: var(--m3-shape-large);
+  border: 1px solid var(--bg2);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 0.5rem;
+  transition: transform 0.25s var(--m3-motion), box-shadow 0.25s var(--m3-motion), opacity 0.2s var(--m3-motion);
+  box-shadow: var(--m3-elevation-1);
+  user-select: none;
+  background-color: var(--bg2);
+}
+
+.video-side-card.side-prev {
+  background: linear-gradient(to right, var(--bg3), var(--bg2));
+}
+
+.video-side-card.side-next {
+  background: linear-gradient(to left, var(--bg3), var(--bg2));
+}
+
+.video-side-card:hover,
+.video-side-card:focus-visible {
+  transform: scale(1.03);
+  box-shadow: var(--m3-elevation-2);
+  border-color: var(--faded_green);
+  outline: 2px solid var(--m3-primary);
+  outline-offset: 2px;
+}
+
+.side-card-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--fg0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  backdrop-filter: blur(4px);
+  transition: all 0.25s var(--m3-motion);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.video-side-card:hover .side-card-icon {
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  transform: scale(1.12);
+}
+
+.side-card-text {
+  margin-top: 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--fg2);
+  text-align: center;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.85;
+}
+
+/* Center Active Video Container */
+.video-center-card {
+  flex: 1 1 68%;
+  max-width: 680px;
+  border-radius: var(--m3-shape-large);
+  overflow: hidden;
+  box-shadow: var(--m3-elevation-3);
+  border: 1.5px solid var(--bg3);
+  background: #000;
+  position: relative;
+  aspect-ratio: 16 / 9;
+}
+
+.video-iframe-wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.video-iframe-wrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* Active Video Details below Carousel */
+.video-details {
+  max-width: 680px;
+  margin: 1.5rem auto 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.video-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.35rem 0.95rem;
+  border-radius: var(--m3-shape-full);
+  background: var(--bg2);
+  color: var(--fg1);
+  border: 1px solid var(--bg3);
+}
+
+.video-title {
+  font-size: clamp(1.15rem, 2.5vw, 1.45rem);
+  font-weight: 700;
+  color: var(--fg1);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.video-source {
+  font-size: 0.88rem;
+  color: var(--fg4);
+  font-weight: 500;
+  margin: -0.25rem 0 0;
+}
+
+.video-desc {
+  font-size: 0.98rem;
+  color: var(--fg3);
+  line-height: 1.55;
+  margin: 0;
+  max-width: 620px;
+}
+
+.video-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.video-ext-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--fg1);
+  text-decoration: none;
+  padding: 0.55rem 1.35rem;
+  border-radius: var(--m3-shape-full);
+  background: var(--bg1);
+  border: 1px solid var(--bg3);
+  box-shadow: var(--m3-elevation-1);
+  transition: all 0.2s var(--m3-motion);
+}
+
+.video-ext-btn:hover {
+  background: var(--bg2);
+  color: var(--fg0);
+  border-color: var(--fg4);
+  transform: translateY(-2px);
+  box-shadow: var(--m3-elevation-2);
+}
+
+/* Nav Controls (Dots + Prev/Next buttons) */
+.video-nav-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.video-nav-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--bg3);
+  background: var(--bg1);
+  color: var(--fg1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  cursor: pointer;
+  line-height: 1;
+  transition: all 0.2s var(--m3-motion);
+  box-shadow: var(--m3-elevation-1);
+}
+
+.video-nav-btn:hover {
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  transform: scale(1.08);
+}
+
+.video-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+}
+
+.video-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg3);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.25s var(--m3-motion);
+}
+
+.video-dot:hover {
+  background: var(--fg4);
+}
+
+.video-dot.active {
+  width: 28px;
+  border-radius: 6px;
+  background: var(--btn-bg);
+}
+
+/* ==========================================================================
    Features Section (M3 Expressive Cards)
    ========================================================================== */
 .features {
@@ -1280,6 +1555,33 @@ footer p {
   .hero p {
     font-size: 1.05rem;
     margin-bottom: 2rem;
+  }
+
+  .video-section {
+    padding: 2.5rem 1rem 2rem;
+    margin: 0 0.5rem 2.5rem;
+  }
+
+  .video-section h2 {
+    font-size: 1.85rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .video-carousel {
+    gap: 0;
+  }
+
+  .video-side-card {
+    display: none;
+  }
+
+  .video-center-card {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+
+  .video-details {
+    padding: 0 0.25rem;
   }
 
   .features {

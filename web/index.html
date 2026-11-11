@@ -45,6 +45,58 @@
       <a href="instructions.html" class="btn">Начать обучение &rarr;</a>
     </section>
 
+    <!-- Video Showcase Section (Mockup / Carousel) -->
+    <section class="video-section" aria-label="Обучающие видеоматериалы">
+      <h2>Видеоматериалы</h2>
+
+      <div class="video-carousel" tabindex="0" aria-label="Карусель видеоуроков (используйте стрелки влево и вправо для переключения)">
+        <!-- Left Side Peek Card (Previous Video) -->
+        <div id="video-prev-side" class="video-side-card side-prev" role="button" tabindex="0" aria-label="Предыдущее видео">
+          <span class="side-card-icon" aria-hidden="true">◀</span>
+          <span id="video-prev-label" class="side-card-text">Предыдущее видео</span>
+        </div>
+
+        <!-- Center Active Video Player -->
+        <div class="video-center-card">
+          <div class="video-iframe-wrapper">
+            <iframe
+              id="active-video-iframe"
+              src="https://vkvideo.ru/video_ext.php?oid=-212510635&amp;id=456240645&amp;hd=2"
+              title="Что делать, если человек рядом потерял сознание или подавился?"
+              allow="autoplay; encrypted-media; fullscreen; picture-in-picture; screen-wake-lock;"
+              loading="lazy">
+            </iframe>
+          </div>
+        </div>
+
+        <!-- Right Side Peek Card (Next Video) -->
+        <div id="video-next-side" class="video-side-card side-next" role="button" tabindex="0" aria-label="Следующее видео">
+          <span class="side-card-icon" aria-hidden="true">▶</span>
+          <span id="video-next-label" class="side-card-text">Следующее видео</span>
+        </div>
+      </div>
+
+      <!-- Active Video Details -->
+      <div class="video-details">
+        <span id="video-badge" class="video-badge">🔴 Красный Крест</span>
+        <h3 id="video-title" class="video-title">Что делать, если человек рядом потерял сознание или подавился?</h3>
+        <p id="video-source" class="video-source">Российский Красный Крест • Инструктор Денис Моисеев</p>
+        <p id="video-desc" class="video-desc">Базовый алгоритм спасения жизни: проверка сознания и дыхания, перевод в устойчивое боковое положение и приём Геймлиха при удушье.</p>
+        <div class="video-actions">
+          <a id="video-direct-link" href="https://vkvideo.ru/video-212510635_456240645?list=119526689f4af5d0ac" target="_blank" rel="noopener noreferrer" class="video-ext-btn">
+            <span>▶️ Открыть в VK Видео ↗</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Nav Controls: Prev / Dots / Next -->
+      <div class="video-nav-controls">
+        <button type="button" id="video-nav-prev" class="video-nav-btn" aria-label="Предыдущее видео" title="Предыдущее видео">‹</button>
+        <div id="video-dots" class="video-dots" role="tablist" aria-label="Индикаторы видео"></div>
+        <button type="button" id="video-nav-next" class="video-nav-btn" aria-label="Следующее видео" title="Следующее видео">›</button>
+      </div>
+    </section>
+
     <section class="features">
       <div class="feature">
         <div class="feature-icon">📋</div>
@@ -67,7 +119,8 @@
   <footer>
     <p>© 2026 Команда «Здоровое будущее». Конкурс «Добрые Сайты 2026».</p>
   </footer>
-  <!-- Theme Management -->
+  <!-- Scripts -->
   <script src="js/theme.js"></script>
+  <script src="js/videos.js"></script>
 </body>
 </html>
