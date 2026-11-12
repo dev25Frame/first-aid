@@ -119,6 +119,7 @@
   var yMap = null;
   var placemarksMap = {};
   var userPlacemark = null;
+  var autoSearchControl = null;
   var centersData = curatedCenters.slice();
   var userCoords = null; // { lat, lng }
   var currentCategory = 'all';
@@ -143,6 +144,29 @@
       return 'islands#darkGreenMedicalIcon';
     }
     return is24h ? 'islands#redMedicalIcon' : 'islands#orangeMedicalIcon';
+  }
+
+  // Инициализация невидимого поискового контроллера по организациям (Яндекс.Справочник)
+  function initAutoSearchControl() {
+    if (autoSearchControl || !yMap) return autoSearchControl;
+    try {
+      autoSearchControl = new ymaps.control.SearchControl({
+        options: {
+          provider: 'yandex#search',
+          noPlacemark: true,
+          noCentering: true,
+          noPopup: true,
+          resultsPerPage: 20,
+          useMapBounds: true,
+          float: 'none',
+          position: { top: '-9999px', left: '-9999px' }
+        }
+      });
+      yMap.controls.add(autoSearchControl);
+    } catch (e) {
+      console.warn('Не удалось инициализировать поиск организаций Яндекса:', e);
+    }
+    return autoSearchControl;
   }
 
   // Инициализация карты Яндекс
@@ -171,6 +195,8 @@
         }, {
           searchControlProvider: 'yandex#search'
         });
+
+        initAutoSearchControl();
 
         // Слушатель клика на стандартную кнопку геолокации в контролах Яндекса
         var geoControl = yMap.controls.get('geolocationControl');
@@ -397,21 +423,11 @@
 
     var statusEl = document.getElementById('geo-status-badge');
     if (statusEl) {
-      statusEl.innerHTML = '📍 Ваше местоположение определено. Травмпункты отсортированы по близости';
+      statusEl.innerHTML = '<span class="geo-spinner" aria-hidden="true"></span> Определение города и поиск отделений...';
       statusEl.classList.add('geo-active');
     }
 
-    // 1. Расчет расстояний до всех отделений в датасете
-    centersData.forEach(function (item) {
-      item.distance = calcDistanceKm(userCoords.lat, userCoords.lng, item.lat, item.lng);
-    });
-
-    // 2. Сортировка по возрастанию расстояния
-    centersData.sort(function (a, b) {
-      return a.distance - b.distance;
-    });
-
-    // 3. Добавление метки пользователя на карту
+    // Добавление метки пользователя на карту
     if (yMap) {
       if (userPlacemark) {
         yMap.geoObjects.remove(userPlacemark);
@@ -430,76 +446,178 @@
       yMap.setCenter([userCoords.lat, userCoords.lng], 13, { checkZoomRange: true });
     }
 
-    renderList();
-    renderMarkers();
-
-    // 4. Гибридный автопоиск дополнительных травмпунктов через геокодер Яндекса
-    if (!isAutoSearchDone && typeof ymaps !== 'undefined' && ymaps.geocode) {
-      performHybridAutoSearch(lat, lng);
+    // Обратное геокодирование для получения названия города
+    if (typeof ymaps !== 'undefined' && ymaps.geocode) {
+      ymaps.geocode([lat, lng]).then(function (res) {
+        var firstGeo = res.geoObjects.get(0);
+        var cityName = '';
+        if (firstGeo) {
+          var localities = firstGeo.getLocalities();
+          if (localities && localities.length > 0) {
+            cityName = localities[0];
+          } else {
+            var adminAreas = firstGeo.getAdministrativeAreas();
+            if (adminAreas && adminAreas.length > 0) {
+              cityName = adminAreas[0];
+            }
+          }
+        }
+        performTraumaSearch(lat, lng, cityName);
+      }).catch(function () {
+        performTraumaSearch(lat, lng, '');
+      });
+    } else {
+      performTraumaSearch(lat, lng, '');
     }
   }
 
-  // Автопоиск ближайших травмпунктов через геокодер/поиск Яндекса
-  function performHybridAutoSearch(lat, lng) {
-    isAutoSearchDone = true;
+  // Поиск травмпунктов через провайдер организаций Яндекса
+  function performTraumaSearch(lat, lng, cityName) {
+    var statusEl = document.getElementById('geo-status-badge');
+    var distFromMoscow = calcDistanceKm(lat, lng, 55.7532, 37.6225);
+    var ctrl = initAutoSearchControl();
 
-    // Ищем травмпункты в радиусе видимости карты
-    ymaps.geocode('травмпункт', {
-      boundedBy: yMap ? yMap.getBounds() : [[lat - 0.15, lng - 0.15], [lat + 0.15, lng + 0.15]],
-      results: 10
-    }).then(function (res) {
-      var addedCount = 0;
+    if (!ctrl) {
+      fallbackToCurated(lat, lng);
+      return;
+    }
 
-      res.geoObjects.each(function (geoObject) {
-        var coords = geoObject.geometry.getCoordinates();
-        var name = geoObject.properties.get('name') || 'Травматологический пункт';
-        var desc = geoObject.properties.get('description') || '';
-        var metaData = geoObject.properties.get('metaDataProperty');
-        var fullAddress = (metaData && metaData.GeocoderMetaData && metaData.GeocoderMetaData.text) || desc || 'Адрес уточняется';
+    ctrl.options.set({
+      boundedBy: [[lat - 0.35, lng - 0.35], [lat + 0.35, lng + 0.35]],
+      useMapBounds: true,
+      strictBounds: false
+    });
 
-        // Проверяем, нет ли уже такого отделения рядом (< 300 метров)
-        var isDuplicate = centersData.some(function (c) {
-          return calcDistanceKm(coords[0], coords[1], c.lat, c.lng) < 0.3;
+    var searchQuery = (cityName ? cityName + ' ' : '') + 'травмпункт';
+
+    if (statusEl) {
+      statusEl.innerHTML = '<span class="geo-spinner" aria-hidden="true"></span> Поиск отделений в ' + (cityName ? 'г. ' + cityName : 'вашем районе') + '...';
+    }
+
+    ctrl.search(searchQuery).then(function () {
+      var rawResults = ctrl.getResultsArray();
+
+      if (rawResults.length === 0 && cityName) {
+        return ctrl.search('травмпункт').then(function () {
+          processSearchResults(ctrl.getResultsArray(), lat, lng, cityName, distFromMoscow);
         });
-
-        if (!isDuplicate && coords && coords.length === 2) {
-          var dist = calcDistanceKm(userCoords.lat, userCoords.lng, coords[0], coords[1]);
-          var isChild = name.toLowerCase().indexOf('детск') !== -1;
-
-          centersData.push({
-            id: Date.now() + Math.floor(Math.random() * 10000),
-            name: name,
-            type: isChild ? 'child' : 'adult',
-            is24h: true,
-            address: fullAddress,
-            phone: '112',
-            metro: '',
-            hours: 'Круглосуточно (24/7)',
-            lat: coords[0],
-            lng: coords[1],
-            desc: 'Дежурное травматологическое отделение, обнаруженное автопоиском поблизости.',
-            distance: dist
-          });
-          addedCount++;
-        }
-      });
-
-      if (addedCount > 0) {
-        centersData.sort(function (a, b) { return a.distance - b.distance; });
-        renderList();
-        renderMarkers();
+      } else {
+        processSearchResults(rawResults, lat, lng, cityName, distFromMoscow);
       }
     }).catch(function (err) {
-      console.warn('Автопоиск Яндекса завершился с резервным возвратом:', err);
+      console.warn('Ошибка поиска травмпунктов:', err);
+      fallbackToCurated(lat, lng);
     });
+  }
+
+  // Обработка результатов поиска и рендер
+  function processSearchResults(rawResults, lat, lng, cityName, distFromMoscow) {
+    var statusEl = document.getElementById('geo-status-badge');
+    var foundItems = [];
+
+    rawResults.forEach(function (obj, idx) {
+      var coords = obj.geometry.getCoordinates();
+      if (!coords || coords.length !== 2) return;
+
+      var name = obj.properties.get('name') || 'Травматологический пункт';
+      var desc = obj.properties.get('description') || '';
+      var compMeta = obj.properties.get('CompanyMetaData') || {};
+
+      var address = compMeta.address || desc || 'Адрес уточняется';
+      var phone = (compMeta.Phones && compMeta.Phones.length > 0 && compMeta.Phones[0].formatted) || '112';
+      var hoursText = (compMeta.Hours && compMeta.Hours.text) || 'Режим уточняйте по телефону';
+      var is24h = /круглосуточ|24\s*ч|24\/7/i.test(hoursText);
+      var isChild = /детск|педиатрич/i.test(name) || /детск/i.test(address);
+      var distance = calcDistanceKm(lat, lng, coords[0], coords[1]);
+
+      if (distance > 120) return;
+
+      foundItems.push({
+        id: 1000 + idx,
+        name: name,
+        type: isChild ? 'child' : 'adult',
+        is24h: is24h,
+        address: address,
+        phone: phone,
+        metro: '',
+        hours: hoursText,
+        lat: coords[0],
+        lng: coords[1],
+        desc: compMeta.url ? ('Официальный сайт: ' + compMeta.url) : 'Городское травматологическое отделение.',
+        distance: distance
+      });
+    });
+
+    if (foundItems.length > 0) {
+      if (distFromMoscow > 70) {
+        // За пределами Москвы показываем исключительно локальные травмпункты
+        centersData = foundItems;
+      } else {
+        // В Москве/МО объединяем с эталонной базой
+        var merged = curatedCenters.slice();
+        merged.forEach(function (c) {
+          c.distance = calcDistanceKm(lat, lng, c.lat, c.lng);
+        });
+        foundItems.forEach(function (fItem) {
+          var isDup = merged.some(function (m) {
+            return calcDistanceKm(fItem.lat, fItem.lng, m.lat, m.lng) < 0.4;
+          });
+          if (!isDup) {
+            merged.push(fItem);
+          }
+        });
+        centersData = merged;
+      }
+
+      centersData.sort(function (a, b) { return a.distance - b.distance; });
+
+      if (statusEl) {
+        statusEl.innerHTML = '📍 ' + (cityName ? cityName + ': ' : '') + 'найдено ' + centersData.length + ' травмпунктов рядом';
+        statusEl.classList.add('geo-active');
+      }
+    } else {
+      if (distFromMoscow > 70) {
+        centersData = [];
+        if (statusEl) {
+          statusEl.innerHTML = '📍 ' + (cityName ? cityName + ': ' : '') + 'травмпункты поблизости не найдены в онлайн-справочнике. При травмах звоните 112.';
+          statusEl.classList.add('geo-active');
+        }
+      } else {
+        fallbackToCurated(lat, lng);
+      }
+    }
+
+    renderList();
+    renderMarkers();
+
+    if (yMap && yMap.geoObjects.getLength() > 0) {
+      yMap.setBounds(yMap.geoObjects.getBounds(), {
+        checkZoomRange: true,
+        zoomMargin: 45
+      });
+    }
+  }
+
+  // Резервный возврат к эталонной базе (Москва)
+  function fallbackToCurated(lat, lng) {
+    var statusEl = document.getElementById('geo-status-badge');
+    centersData = curatedCenters.slice();
+    if (lat && lng) {
+      centersData.forEach(function (item) {
+        item.distance = calcDistanceKm(lat, lng, item.lat, item.lng);
+      });
+      centersData.sort(function (a, b) { return a.distance - b.distance; });
+    }
+    if (statusEl) {
+      statusEl.innerHTML = '📍 Показаны дежурные травматологические центры';
+      statusEl.classList.add('geo-active');
+    }
+    renderList();
+    renderMarkers();
   }
 
   // Запрос геолокации через браузер с жестким тайм-аутом
   function requestGeolocation(isManualRetry) {
-    if (isManualRetry) {
-      isAutoSearchDone = false;
-    }
-
     var statusEl = document.getElementById('geo-status-badge');
     if (statusEl) {
       statusEl.innerHTML = '<span class="geo-spinner" aria-hidden="true"></span> Определение ближайших травмпунктов...';
@@ -518,13 +636,13 @@
       function (err) {
         console.warn('Геолокация недоступна:', err.message);
         if (statusEl) {
-          statusEl.innerHTML = '📍 Геолокация не определена. Нажмите «Определить снова» или разрешите доступ в браузере.';
+          statusEl.innerHTML = '📍 Геолокация не определена. Нажмите «Определить снова» или введите ваш город в строке поиска.';
         }
         renderList();
         renderMarkers();
       },
       {
-        timeout: 5000,
+        timeout: 7000,
         enableHighAccuracy: isManualRetry || false
       }
     );
@@ -547,10 +665,43 @@
     // Строка поиска
     var searchInput = document.getElementById('map-search-input');
     if (searchInput) {
+      // 1. Быстрая фильтрация текущего списка
       searchInput.addEventListener('input', function (e) {
         searchQuery = e.target.value.trim();
         renderList();
         renderMarkers();
+      });
+
+      // 2. Поиск по городам России по нажатию Enter
+      searchInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          var query = searchInput.value.trim();
+          if (query.length >= 3 && typeof ymaps !== 'undefined' && ymaps.geocode) {
+            var statusEl = document.getElementById('geo-status-badge');
+            if (statusEl) {
+              statusEl.innerHTML = '<span class="geo-spinner" aria-hidden="true"></span> Поиск травмпунктов в «' + query + '»...';
+              statusEl.classList.add('geo-active');
+            }
+
+            ymaps.geocode(query, { results: 1 }).then(function (res) {
+              var firstGeo = res.geoObjects.get(0);
+              if (firstGeo) {
+                var coords = firstGeo.geometry.getCoordinates();
+                var localities = firstGeo.getLocalities();
+                var city = (localities && localities.length > 0) ? localities[0] : query;
+                if (yMap) {
+                  yMap.setCenter(coords, 12, { checkZoomRange: true });
+                }
+                performTraumaSearch(coords[0], coords[1], city);
+              } else {
+                if (statusEl) statusEl.innerHTML = '📍 Локация «' + query + '» не найдена';
+              }
+            }).catch(function (err) {
+              console.warn('Ошибка поиска города:', err);
+            });
+          }
+        }
       });
     }
 
