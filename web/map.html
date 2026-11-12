@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Травмпункты рядом • Первая помощь</title>
+  <meta name="description" content="Поиск ближайших дежурных и детских травматологических пунктов с адресами, телефонами и расчетом расстояния.">
+  
+  <!-- Leaflet Map CSS (No API Key Required) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="stylesheet" href="css/style.css">
+  
+  <script>
+    (function(){
+      try {
+        var s = localStorage.getItem('theme');
+        var p = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var t = (s === 'dark' || (!s && p)) ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch(e) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    })();
+  </script>
+</head>
+<body>
+  <header>
+    <div class="nav-container">
+      <a href="index.html" class="brand">
+        <span class="brand-icon">✚</span>
+        <span>Первая помощь</span>
+      </a>
+      <nav>
+        <ul>
+          <li><a href="index.html">Главная</a></li>
+          <li><a href="instructions.html">Инструкции</a></li>
+          <li><a href="map.html" class="active" aria-current="page">Травмпункты</a></li>
+          <li><a href="test.html">Проверь себя</a></li>
+        </ul>
+      </nav>
+      <button id="theme-toggle" class="theme-toggle-btn" type="button" aria-label="Переключить тему оформления" title="Сменить тему">
+        <span class="theme-toggle-icon">🌙</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="map-page-wrapper">
+    <div class="map-header">
+      <h1>Дежурные травмпункты</h1>
+      <p>Быстрый поиск ближайших круглосуточных и детских травматологических пунктов с телефонами и навигацией.</p>
+      <div id="geo-status-badge" class="geo-status-badge" role="status" aria-live="polite">
+        <span class="geo-spinner" aria-hidden="true"></span> Определение ближайших травмпунктов...
+      </div>
+    </div>
+
+    <!-- Fallback Notice for Network/Offline issues -->
+    <div id="map-fallback-alert" style="display:none;" class="cert-locked-notice">
+      ℹ️ Интерактивная карта работает в автономном режиме. Список травмпунктов с телефонами и адресами полностью доступен ниже.
+    </div>
+
+    <!-- Controls Bar: Search & Category Chips -->
+    <div class="map-controls-bar">
+      <div class="map-search-box">
+        <span class="search-icon-decor" aria-hidden="true">🔍</span>
+        <input type="search" id="map-search-input" placeholder="Поиск по названию, метро или улице..." aria-label="Поиск по названию или адресу травмпункта">
+      </div>
+
+      <div class="map-chips" role="toolbar" aria-label="Фильтры травмпунктов">
+        <span class="map-chips-label">Фильтр:</span>
+        <button type="button" class="chip active" data-category="all">🌟 Все отделения</button>
+        <button type="button" class="chip" data-category="24h">🌙 Круглосуточно (24/7)</button>
+        <button type="button" class="chip" data-category="child">👶 Детские</button>
+        <button type="button" class="chip" data-category="adult">🏥 Взрослые</button>
+      </div>
+    </div>
+
+    <!-- Mobile Tabs (List / Map) -->
+    <div class="map-mobile-tabs" role="tablist" aria-label="Переключение вида">
+      <button type="button" id="tab-show-list" class="map-tab-btn active" role="tab" aria-selected="true">📋 Список отделений</button>
+      <button type="button" id="tab-show-map" class="map-tab-btn" role="tab" aria-selected="false">🗺️ Интерактивная карта</button>
+    </div>
+
+    <!-- Two-Panel Layout (List & Interactive Map) -->
+    <div class="map-layout">
+      <!-- List Column -->
+      <aside id="map-list-col" class="map-list-col" aria-label="Список медицинских учреждений">
+        <div class="list-col-header">
+          <h2>Травматологические центры</h2>
+          <span id="centers-count" class="centers-count-badge" aria-live="polite">Загрузка...</span>
+        </div>
+        <div id="centers-list" class="centers-scroll-area">
+          <!-- Populated dynamically via map.js -->
+        </div>
+      </aside>
+
+      <!-- Map Column -->
+      <section id="map-view-col" class="map-view-col hidden-mobile" aria-label="Карта расположения травмпунктов">
+        <div id="trauma-map" role="application" aria-label="Карта травмпунктов"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2026 Команда «Здоровое будущее». Конкурс «Добрые Сайты 2026».</p>
+  </footer>
+
+  <!-- Leaflet JS (No API Key Required) -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- Scripts -->
+  <script src="js/theme.js"></script>
+  <script src="js/map.js"></script>
+</body>
+</html>

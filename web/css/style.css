@@ -1483,6 +1483,509 @@ nav a[aria-current="page"] {
 }
 
 /* ==========================================================================
+   Trauma Centers Map & Directory Section (Material You 3)
+   ========================================================================== */
+.map-page-wrapper {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 1rem 1rem 3.5rem;
+}
+
+.map-header {
+  text-align: center;
+  margin-bottom: 1.75rem;
+}
+
+.map-header h1 {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 800;
+  color: var(--fg1);
+  letter-spacing: -0.02em;
+  margin: 0 0 0.5rem;
+}
+
+.map-header p {
+  color: var(--fg3);
+  font-size: 1.1rem;
+  max-width: 680px;
+  margin: 0 auto 1rem;
+  line-height: 1.5;
+}
+
+.geo-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  border-radius: var(--m3-shape-full);
+  background: var(--bg0_s);
+  border: 1px solid var(--bg2);
+  font-size: 0.88rem;
+  color: var(--fg3);
+  font-weight: 500;
+  box-shadow: var(--m3-elevation-1);
+}
+
+.geo-status-badge.geo-active {
+  background: var(--bg2);
+  color: var(--fg0);
+  border-color: var(--faded_green);
+}
+
+.geo-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--fg3);
+  border-top-color: var(--m3-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Map Controls: Search & Chips */
+.map-controls-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  background: var(--bg0_s);
+  padding: 1rem 1.25rem;
+  border-radius: var(--m3-shape-large);
+  border: 1px solid var(--bg2);
+}
+
+.map-search-box {
+  width: 100%;
+  position: relative;
+}
+
+.map-search-box input {
+  width: 100%;
+  padding: 0.8rem 1.25rem 0.8rem 2.75rem;
+  border-radius: var(--m3-shape-full);
+  border: 1.5px solid var(--bg2);
+  background: var(--bg0);
+  color: var(--fg0);
+  font-family: inherit;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.2s var(--m3-motion);
+}
+
+.map-search-box input:focus {
+  border-color: var(--faded_green);
+  box-shadow: 0 0 0 3px rgba(136, 171, 126, 0.25);
+}
+
+.search-icon-decor {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.1rem;
+  color: var(--fg3);
+  pointer-events: none;
+}
+
+.map-chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.map-chips-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--fg3);
+  margin-right: 0.25rem;
+}
+
+/* Mobile Tab Switcher */
+.map-mobile-tabs {
+  display: none;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.map-tab-btn {
+  padding: 0.75rem;
+  border-radius: var(--m3-shape-full);
+  border: 1.5px solid var(--bg2);
+  background: var(--bg0_s);
+  color: var(--fg2);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s var(--m3-motion);
+}
+
+.map-tab-btn.active {
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  border-color: var(--btn-bg);
+  box-shadow: var(--m3-elevation-1);
+}
+
+/* Two-Panel Layout */
+.map-layout {
+  display: grid;
+  grid-template-columns: 440px 1fr;
+  gap: 1.5rem;
+  height: 680px;
+  align-items: stretch;
+}
+
+.map-list-col {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg0_s);
+  border: 1px solid var(--bg2);
+  border-radius: var(--m3-shape-large);
+  overflow: hidden;
+  box-shadow: var(--m3-elevation-1);
+}
+
+.list-col-header {
+  padding: 0.9rem 1.25rem;
+  background: var(--bg1);
+  border-bottom: 1px solid var(--bg2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.list-col-header h2 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--fg1);
+  margin: 0;
+}
+
+.centers-count-badge {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--fg3);
+}
+
+.centers-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg3) transparent;
+}
+
+.centers-scroll-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.centers-scroll-area::-webkit-scrollbar-thumb {
+  background: var(--bg3);
+  border-radius: 4px;
+}
+
+/* Individual Trauma Center Card */
+.trauma-card {
+  background: var(--bg0);
+  border: 1.5px solid var(--bg1);
+  border-radius: var(--m3-shape-medium);
+  padding: 1.25rem;
+  transition: all 0.2s var(--m3-motion);
+  cursor: pointer;
+  outline: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+}
+
+.trauma-card:hover {
+  border-color: var(--bg3);
+  transform: translateY(-2px);
+  box-shadow: var(--m3-elevation-2);
+}
+
+.trauma-card:focus-visible,
+.trauma-card.active-card {
+  border-color: var(--faded_green);
+  box-shadow: 0 0 0 2px var(--m3-primary);
+  background: var(--bg0_s);
+}
+
+.trauma-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.trauma-type-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--m3-shape-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.badge-24h {
+  background: rgba(214, 112, 110, 0.2);
+  color: var(--neutral_red);
+  border: 1px solid rgba(214, 112, 110, 0.4);
+}
+
+.badge-child {
+  background: rgba(136, 171, 126, 0.22);
+  color: var(--neutral_green);
+  border: 1px solid rgba(136, 171, 126, 0.4);
+}
+
+.badge-regular {
+  background: rgba(212, 180, 101, 0.22);
+  color: var(--neutral_yellow);
+  border: 1px solid rgba(212, 180, 101, 0.4);
+}
+
+.item-dist-pill {
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--m3-shape-full);
+  background: var(--bg2);
+  color: var(--fg1);
+}
+
+.trauma-card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--fg0);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.trauma-card-address {
+  font-size: 0.92rem;
+  color: var(--fg2);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.metro-tag {
+  color: var(--fg4);
+  font-weight: 600;
+}
+
+.trauma-card-hours {
+  font-size: 0.88rem;
+  color: var(--fg3);
+  margin: 0;
+}
+
+.trauma-card-desc {
+  font-size: 0.88rem;
+  color: var(--fg3);
+  line-height: 1.45;
+  margin: 0.25rem 0 0;
+}
+
+.trauma-card-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+}
+
+.action-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: var(--m3-shape-full);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s var(--m3-motion);
+  outline: none;
+}
+
+.call-action-btn {
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+}
+
+.call-action-btn:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.route-action-btn {
+  background: var(--bg2);
+  color: var(--fg1);
+  border: 1px solid var(--bg3);
+}
+
+.route-action-btn:hover {
+  background: var(--bg3);
+  color: var(--fg0);
+  transform: translateY(-1px);
+}
+
+/* Map View Column */
+.map-view-col {
+  height: 100%;
+  border-radius: var(--m3-shape-large);
+  overflow: hidden;
+  border: 1px solid var(--bg2);
+  box-shadow: var(--m3-elevation-2);
+  position: relative;
+  background: var(--bg0_s);
+}
+
+#trauma-map {
+  width: 100%;
+  height: 100%;
+  min-height: 450px;
+  background: var(--bg0);
+}
+
+/* OpenStreetMap Dark Mode adaptation (Zero API Key, Zero Watermarks) */
+:root[data-theme="dark"] #trauma-map .leaflet-tile-pane,
+[data-theme="dark"] #trauma-map .leaflet-tile-pane {
+  filter: brightness(0.62) invert(1) contrast(1.75) hue-rotate(200deg) saturate(0.35);
+}
+
+:root[data-theme="dark"] #trauma-map .leaflet-container {
+  background: var(--bg0_h, #181c17);
+}
+
+/* Скрытие плашки атрибуции Leaflet */
+.leaflet-control-attribution {
+  display: none !important;
+}
+
+/* Custom Marker & User Marker Animations */
+.custom-map-marker {
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.custom-map-marker:hover {
+  transform: scale(1.15) translateY(-4px);
+  z-index: 1000 !important;
+}
+
+.user-geo-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-pulse-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #1976d2;
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 0 rgba(25, 118, 210, 0.4);
+  animation: pulse-ring 1.8s infinite;
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(25, 118, 210, 0.7); }
+  70% { box-shadow: 0 0 0 16px rgba(25, 118, 210, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(25, 118, 210, 0); }
+}
+
+/* Leaflet Popup Styling Matching Theme */
+.leaflet-popup-content-wrapper {
+  background: var(--bg0) !important;
+  color: var(--fg1) !important;
+  border-radius: var(--m3-shape-medium) !important;
+  border: 1.5px solid var(--bg2) !important;
+  box-shadow: var(--m3-elevation-3) !important;
+  padding: 0.25rem;
+}
+
+.leaflet-popup-tip {
+  background: var(--bg0) !important;
+}
+
+.map-popup-card h4 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--fg0);
+  margin: 0 0 0.35rem;
+  line-height: 1.35;
+}
+
+.map-popup-card .popup-addr {
+  font-size: 0.85rem;
+  color: var(--fg2);
+  margin: 0 0 0.25rem;
+}
+
+.map-popup-card .popup-hours {
+  font-size: 0.82rem;
+  color: var(--fg3);
+  margin: 0 0 0.4rem;
+}
+
+.map-popup-card .popup-dist {
+  font-size: 0.85rem;
+  color: var(--faded_green);
+  margin: 0 0 0.5rem;
+}
+
+.popup-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.popup-btn {
+  flex: 1;
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--m3-shape-full);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+}
+
+.popup-call {
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+}
+
+.popup-route {
+  background: var(--bg2);
+  color: var(--fg1);
+}
+
+.no-results-card {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: var(--fg3);
+}
+
+.no-results-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+/* ==========================================================================
    Footer
    ========================================================================== */
 footer {
@@ -1638,5 +2141,18 @@ footer p {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
+  }
+
+  .map-layout {
+    grid-template-columns: 1fr;
+    height: 560px;
+  }
+
+  .map-mobile-tabs {
+    display: grid;
+  }
+
+  .hidden-mobile {
+    display: none !important;
   }
 }
