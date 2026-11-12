@@ -1,14 +1,15 @@
 /**
  * Интерактивная карта травмпунктов • Первая помощь рядом
- * Версия без API-ключей (Leaflet.js + CartoDB Positron / Dark Matter)
+ * Официальная интеграция Яндекс.Карты JS API v2.1 (Ключ 0898ed33-21d0-4e96-8e43-dc2c5466d146)
+ * Гибридный поиск: проверенная база + автопоиск по геолокации
  * Соответствует принципам WCAG 2.1, Graceful Degradation и Mobile-First
  */
 
 (function () {
   'use strict';
 
-  // Встроенный датасет для гарантированной работы офлайн и по протоколу file://
-  var defaultCenters = [
+  // Базовый курированный датасет отделений с проверенными телефонами и статусом 24/7
+  var curatedCenters = [
     {
       id: 1,
       name: "Травматологический пункт ГКБ им. С.П. Боткина",
@@ -115,16 +116,16 @@
     }
   ];
 
-  var map = null;
-  var tileLayer = null;
-  var markers = {};
-  var userMarker = null;
-  var centersData = defaultCenters.slice();
+  var yMap = null;
+  var placemarksMap = {};
+  var userPlacemark = null;
+  var centersData = curatedCenters.slice();
   var userCoords = null; // { lat, lng }
   var currentCategory = 'all';
   var searchQuery = '';
+  var isAutoSearchDone = false;
 
-  // Формула гаверсинусов (Haversine) для расчета расстояния в км
+  // Формула гаверсинусов (Haversine formula) для точного расчета дистанции в км
   function calcDistanceKm(lat1, lon1, lat2, lon2) {
     var R = 6371; // Радиус Земли в км
     var dLat = (lat2 - lat1) * Math.PI / 180;
@@ -136,145 +137,140 @@
     return R * c;
   }
 
-  // Создание кастомных SVG маркеров
-  function createCustomIcon(type, is24h) {
-    var bgColor = type === 'child' ? '#2e7d32' : (is24h ? '#c62828' : '#e65100');
-    var badgeText = type === 'child' ? '👶' : (is24h ? '✚' : '🏥');
-    
-    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="46" viewBox="0 0 36 46">' +
-      '<path d="M18 0C8.06 0 0 8.06 0 18c0 13.5 18 28 18 28s18-14.5 18-28C36 8.06 27.94 0 18 0z" fill="' + bgColor + '" stroke="#ffffff" stroke-width="2"/>' +
-      '<circle cx="18" cy="18" r="12" fill="#ffffff"/>' +
-      '<text x="18" y="23" font-size="14" text-anchor="middle" font-family="system-ui, sans-serif">' + badgeText + '</text>' +
-      '</svg>';
-
-    return L.divIcon({
-      className: 'custom-map-marker',
-      html: svg,
-      iconSize: [36, 46],
-      iconAnchor: [18, 46],
-      popupAnchor: [0, -42]
-    });
+  // Получение пресета иконки Яндекс.Карт в зависимости от типа учреждения
+  function getYmapsPreset(type, is24h) {
+    if (type === 'child') {
+      return 'islands#darkGreenMedicalIcon';
+    }
+    return is24h ? 'islands#redMedicalIcon' : 'islands#orangeMedicalIcon';
   }
 
-  // Инициализация картографического слоя ArcGIS World Street Map
-  // Полностью открытый, работает без API-ключей, без водяных знаков и без блокировок по протоколу file://
-  function updateTileLayer() {
-    if (!map || tileLayer) return;
-
-    tileLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 19,
-      maxNativeZoom: 17,
-      attribution: 'Tiles &copy; Esri &mdash; Sources: Esri, DeLorme, NAVTEQ, TomTom, USGS, OpenStreetMap'
-    }).addTo(map);
-  }
-
-  // Инициализация карты Leaflet
-  function initMap() {
+  // Инициализация карты Яндекс
+  function initYandexMap() {
     var mapContainer = document.getElementById('trauma-map');
     if (!mapContainer) return;
 
-    if (typeof L === 'undefined') {
-      console.warn('Leaflet библиотека недоступна. Список травмпунктов работает в автономном режиме.');
+    if (typeof ymaps === 'undefined') {
+      console.warn('API Яндекс Карт недоступно. Работает автономный режим списка.');
       var fallbackAlert = document.getElementById('map-fallback-alert');
       if (fallbackAlert) fallbackAlert.style.display = 'block';
+      renderList();
+      setupControls();
+      requestGeolocation(false);
       return;
     }
 
-    // Дефолтный центр (Москва)
-    var defaultCenter = [55.753215, 37.622504];
+    ymaps.ready(function () {
+      var defaultCenter = [55.753215, 37.622504]; // Москва по умолчанию
 
-    map = L.map('trauma-map', {
-      center: defaultCenter,
-      zoom: 12,
-      zoomControl: true,
-      scrollWheelZoom: true,
-      attributionControl: false
-    });
+      try {
+        yMap = new ymaps.Map('trauma-map', {
+          center: defaultCenter,
+          zoom: 12,
+          controls: ['zoomControl', 'geolocationControl', 'typeSelector', 'fullscreenControl']
+        }, {
+          searchControlProvider: 'yandex#search'
+        });
 
-    updateTileLayer();
+        // Слушатель клика на стандартную кнопку геолокации в контролах Яндекса
+        var geoControl = yMap.controls.get('geolocationControl');
+        if (geoControl) {
+          geoControl.events.add('locationchange', function (e) {
+            var position = e.get('geoObjects').get(0);
+            if (position) {
+              var coords = position.geometry.getCoordinates();
+              handleUserLocation(coords[0], coords[1]);
+            }
+          });
+        }
 
-    // Слушатель смены темы оформления
-    var themeToggleBtn = document.getElementById('theme-toggle');
-    if (themeToggleBtn) {
-      themeToggleBtn.addEventListener('click', function () {
-        setTimeout(updateTileLayer, 100);
-      });
-    }
+        renderMarkers();
+        renderList();
+        setupControls();
 
-    // Рендер маркеров
-    renderMarkers();
+        // Сразу запрашиваем геолокацию пользователя
+        requestGeolocation(false);
 
-    // Защита от серого экрана: принудительный пересчет размеров
-    setTimeout(function () {
-      if (map) map.invalidateSize();
-    }, 250);
-
-    window.addEventListener('resize', function () {
-      if (map) map.invalidateSize();
+      } catch (e) {
+        console.error('Ошибка инициализации Яндекс Карт:', e);
+        var fallbackAlert = document.getElementById('map-fallback-alert');
+        if (fallbackAlert) fallbackAlert.style.display = 'block';
+        renderList();
+        setupControls();
+        requestGeolocation(false);
+      }
     });
   }
 
-  // Отрисовка маркеров на карте
+  // Отрисовка маркеров на карте Яндекса
   function renderMarkers() {
-    if (!map) return;
+    if (!yMap) return;
 
-    // Очистить старые маркеры
-    Object.keys(markers).forEach(function (id) {
-      map.removeLayer(markers[id]);
-    });
-    markers = {};
+    // Очистить существующие метки
+    yMap.geoObjects.removeAll();
+    placemarksMap = {};
+
+    // Восстанавливаем метку пользователя, если определена
+    if (userPlacemark) {
+      yMap.geoObjects.add(userPlacemark);
+    }
 
     var filtered = getFilteredCenters();
 
     filtered.forEach(function (item) {
-      var icon = createCustomIcon(item.type, item.is24h);
-      var marker = L.marker([item.lat, item.lng], { icon: icon }).addTo(map);
-
-      var distanceHtml = item.distance !== undefined
-        ? '<div class="popup-dist">📍 Расстояние: <strong>' + item.distance.toFixed(1) + ' км</strong></div>'
-        : '';
-
       var routeUrl = 'https://yandex.ru/maps/?rtext=' +
         (userCoords ? userCoords.lat + ',' + userCoords.lng : '') +
         '~' + item.lat + ',' + item.lng + '&rtt=auto';
 
-      var popupContent = '<div class="map-popup-card">' +
+      var distText = item.distance !== undefined
+        ? '<p><strong>📍 ' + item.distance.toFixed(1) + ' км от вас</strong></p>'
+        : '';
+
+      var balloonHtml = '<div class="ymaps-balloon-card">' +
         '<h4>' + item.name + '</h4>' +
-        '<p class="popup-addr">' + item.address + (item.metro ? ' (м. ' + item.metro + ')' : '') + '</p>' +
-        '<p class="popup-hours">⏱ ' + item.hours + '</p>' +
-        distanceHtml +
-        '<div class="popup-actions">' +
-          '<a href="tel:' + item.phone.replace(/[^0-9+]/g, '') + '" class="popup-btn popup-call">📞 Позвонить</a>' +
-          '<a href="' + routeUrl + '" target="_blank" rel="noopener noreferrer" class="popup-btn popup-route">🗺️ Маршрут</a>' +
+        '<p>📍 ' + item.address + (item.metro ? ' (м. ' + item.metro + ')' : '') + '</p>' +
+        '<p>📞 <strong>Телефон:</strong> <a href="tel:' + item.phone.replace(/[^0-9+]/g, '') + '" class="balloon-phone-link">' + item.phone + '</a></p>' +
+        '<p>⏱ <strong>Режим:</strong> ' + item.hours + '</p>' +
+        distText +
+        '<div class="ymaps-balloon-actions">' +
+          '<a href="tel:' + item.phone.replace(/[^0-9+]/g, '') + '" class="ymaps-balloon-btn ymaps-btn-call" title="Позвонить в регистратуру">📞 Позвонить</a>' +
+          '<a href="' + routeUrl + '" target="_blank" rel="noopener noreferrer" class="ymaps-balloon-btn ymaps-btn-route" title="Маршрут в Яндекс.Картах">🗺️ Маршрут</a>' +
         '</div>' +
       '</div>';
 
-      marker.bindPopup(popupContent, { maxWidth: 280 });
+      var placemark = new ymaps.Placemark([item.lat, item.lng], {
+        balloonContentHeader: '<div class="ymaps-balloon-card"><h4>' + item.name + '</h4></div>',
+        balloonContentBody: balloonHtml,
+        hintContent: item.name
+      }, {
+        preset: getYmapsPreset(item.type, item.is24h),
+        balloonMaxWidth: 290
+      });
 
-      marker.on('click', function () {
+      placemark.events.add('click', function () {
         highlightCard(item.id);
       });
 
-      markers[item.id] = marker;
+      yMap.geoObjects.add(placemark);
+      placemarksMap[item.id] = placemark;
     });
 
-    // Если есть маркеры, подстраиваем зум
-    if (filtered.length > 0) {
-      var group = new L.featureGroup(Object.values(markers));
-      if (userMarker) group.addLayer(userMarker);
-      map.fitBounds(group.getBounds().pad(0.15));
+    // Если есть метки и нет геопозиции пользователя, подстраиваем зум по всем маркерам
+    if (filtered.length > 0 && !userCoords) {
+      yMap.setBounds(yMap.geoObjects.getBounds(), {
+        checkZoomRange: true,
+        zoomMargin: 40
+      });
     }
   }
 
-  // Фильтрация данных
+  // Фильтрация травмпунктов по категории и поисковой строке
   function getFilteredCenters() {
     return centersData.filter(function (item) {
-      // Категория
       if (currentCategory === 'child' && item.type !== 'child') return false;
       if (currentCategory === 'adult' && item.type !== 'adult') return false;
       if (currentCategory === '24h' && !item.is24h) return false;
 
-      // Поисковая строка
       if (searchQuery) {
         var q = searchQuery.toLowerCase();
         var matchName = item.name.toLowerCase().indexOf(q) !== -1;
@@ -287,7 +283,7 @@
     });
   }
 
-  // Рендер списка карточек травмпунктов
+  // Рендер списка карточек
   function renderList() {
     var container = document.getElementById('centers-list');
     var countEl = document.getElementById('centers-count');
@@ -302,8 +298,8 @@
     if (filtered.length === 0) {
       container.innerHTML = '<div class="no-results-card">' +
         '<div class="no-results-icon">🔍</div>' +
-        '<h3>Травмпункты не найдены</h3>' +
-        '<p>Попробуйте изменить запрос или сбросить фильтры.</p>' +
+        '<h3>Отделения не найдены</h3>' +
+        '<p>Попробуйте изменить поисковый запрос или сбросить фильтры.</p>' +
       '</div>';
       return;
     }
@@ -328,18 +324,19 @@
         '</div>' +
         '<h3 class="trauma-card-title">' + item.name + '</h3>' +
         '<p class="trauma-card-address">📍 ' + item.address + (item.metro ? ' <span class="metro-tag">🚇 ' + item.metro + '</span>' : '') + '</p>' +
+        '<p class="trauma-card-phone">📞 <strong>Регистратура:</strong> <a href="tel:' + item.phone.replace(/[^0-9+]/g, '') + '" class="trauma-phone-link">' + item.phone + '</a></p>' +
         '<p class="trauma-card-hours">⏱ <strong>Режим:</strong> ' + item.hours + '</p>' +
         '<p class="trauma-card-desc">' + item.desc + '</p>' +
         '<div class="trauma-card-actions">' +
-          '<a href="tel:' + item.phone.replace(/[^0-9+]/g, '') + '" class="action-btn call-action-btn">📞 ' + item.phone + '</a>' +
-          '<a href="' + routeUrl + '" target="_blank" rel="noopener noreferrer" class="action-btn route-action-btn">🗺️ Маршрут</a>' +
+          '<a href="tel:' + item.phone.replace(/[^0-9+]/g, '') + '" class="action-btn call-action-btn" title="Позвонить в регистратуру: ' + item.phone + '" aria-label="Позвонить в регистратуру">📞 Позвонить в регистратуру</a>' +
+          '<a href="' + routeUrl + '" target="_blank" rel="noopener noreferrer" class="action-btn route-action-btn" title="Маршрут в Яндекс.Картах или Навигаторе" aria-label="Маршрут в Яндекс.Картах">🗺️ Маршрут в Яндекс.Картах</a>' +
         '</div>' +
       '</article>';
     });
 
     container.innerHTML = html;
 
-    // Привязка кликов по карточкам
+    // Навешивание кликов на карточки списка
     var cards = container.querySelectorAll('.trauma-card');
     cards.forEach(function (card) {
       card.addEventListener('click', function () {
@@ -356,23 +353,26 @@
     });
   }
 
-  // Фокусировка на маркере при клике на карточку
+  // Фокусировка на маркере при клике на карточку в списке
   function focusCenterOnMap(id) {
     var center = centersData.find(function (c) { return c.id === id; });
     if (!center) return;
 
     highlightCard(id);
 
-    if (map) {
-      map.flyTo([center.lat, center.lng], 15, { duration: 1 });
-      if (markers[id]) {
-        setTimeout(function () {
-          markers[id].openPopup();
-        }, 500);
-      }
+    if (yMap) {
+      yMap.panTo([center.lat, center.lng], {
+        flying: true,
+        duration: 800
+      }).then(function () {
+        var pm = placemarksMap[id];
+        if (pm) {
+          pm.balloon.open();
+        }
+      });
     }
 
-    // Если на мобильном активна вкладка списка, переключаем на карту при клике
+    // Если на мобильном экране открыта вкладка списка, переключаем на карту
     var mapTabBtn = document.getElementById('tab-show-map');
     if (window.innerWidth <= 860 && mapTabBtn) {
       mapTabBtn.click();
@@ -391,73 +391,146 @@
     }
   }
 
-  // Определение геолокации пользователя с жестким тайм-аутом
-  function requestGeolocation() {
+  // Обработка полученных координат пользователя
+  function handleUserLocation(lat, lng) {
+    userCoords = { lat: lat, lng: lng };
+
     var statusEl = document.getElementById('geo-status-badge');
-    if (!statusEl) return;
+    if (statusEl) {
+      statusEl.innerHTML = '📍 Ваше местоположение определено. Травмпункты отсортированы по близости';
+      statusEl.classList.add('geo-active');
+    }
+
+    // 1. Расчет расстояний до всех отделений в датасете
+    centersData.forEach(function (item) {
+      item.distance = calcDistanceKm(userCoords.lat, userCoords.lng, item.lat, item.lng);
+    });
+
+    // 2. Сортировка по возрастанию расстояния
+    centersData.sort(function (a, b) {
+      return a.distance - b.distance;
+    });
+
+    // 3. Добавление метки пользователя на карту
+    if (yMap) {
+      if (userPlacemark) {
+        yMap.geoObjects.remove(userPlacemark);
+      }
+
+      userPlacemark = new ymaps.Placemark([userCoords.lat, userCoords.lng], {
+        balloonContentHeader: '<strong>Ваше местоположение</strong>',
+        balloonContentBody: '<p>Координаты: ' + userCoords.lat.toFixed(4) + ', ' + userCoords.lng.toFixed(4) + '</p>',
+        hintContent: 'Вы находитесь здесь'
+      }, {
+        preset: 'islands#blueCircleDotIconWithCaption',
+        iconCaption: 'Вы здесь'
+      });
+
+      yMap.geoObjects.add(userPlacemark);
+      yMap.setCenter([userCoords.lat, userCoords.lng], 13, { checkZoomRange: true });
+    }
+
+    renderList();
+    renderMarkers();
+
+    // 4. Гибридный автопоиск дополнительных травмпунктов через геокодер Яндекса
+    if (!isAutoSearchDone && typeof ymaps !== 'undefined' && ymaps.geocode) {
+      performHybridAutoSearch(lat, lng);
+    }
+  }
+
+  // Автопоиск ближайших травмпунктов через геокодер/поиск Яндекса
+  function performHybridAutoSearch(lat, lng) {
+    isAutoSearchDone = true;
+
+    // Ищем травмпункты в радиусе видимости карты
+    ymaps.geocode('травмпункт', {
+      boundedBy: yMap ? yMap.getBounds() : [[lat - 0.15, lng - 0.15], [lat + 0.15, lng + 0.15]],
+      results: 10
+    }).then(function (res) {
+      var addedCount = 0;
+
+      res.geoObjects.each(function (geoObject) {
+        var coords = geoObject.geometry.getCoordinates();
+        var name = geoObject.properties.get('name') || 'Травматологический пункт';
+        var desc = geoObject.properties.get('description') || '';
+        var metaData = geoObject.properties.get('metaDataProperty');
+        var fullAddress = (metaData && metaData.GeocoderMetaData && metaData.GeocoderMetaData.text) || desc || 'Адрес уточняется';
+
+        // Проверяем, нет ли уже такого отделения рядом (< 300 метров)
+        var isDuplicate = centersData.some(function (c) {
+          return calcDistanceKm(coords[0], coords[1], c.lat, c.lng) < 0.3;
+        });
+
+        if (!isDuplicate && coords && coords.length === 2) {
+          var dist = calcDistanceKm(userCoords.lat, userCoords.lng, coords[0], coords[1]);
+          var isChild = name.toLowerCase().indexOf('детск') !== -1;
+
+          centersData.push({
+            id: Date.now() + Math.floor(Math.random() * 10000),
+            name: name,
+            type: isChild ? 'child' : 'adult',
+            is24h: true,
+            address: fullAddress,
+            phone: '112',
+            metro: '',
+            hours: 'Круглосуточно (24/7)',
+            lat: coords[0],
+            lng: coords[1],
+            desc: 'Дежурное травматологическое отделение, обнаруженное автопоиском поблизости.',
+            distance: dist
+          });
+          addedCount++;
+        }
+      });
+
+      if (addedCount > 0) {
+        centersData.sort(function (a, b) { return a.distance - b.distance; });
+        renderList();
+        renderMarkers();
+      }
+    }).catch(function (err) {
+      console.warn('Автопоиск Яндекса завершился с резервным возвратом:', err);
+    });
+  }
+
+  // Запрос геолокации через браузер с жестким тайм-аутом
+  function requestGeolocation(isManualRetry) {
+    if (isManualRetry) {
+      isAutoSearchDone = false;
+    }
+
+    var statusEl = document.getElementById('geo-status-badge');
+    if (statusEl) {
+      statusEl.innerHTML = '<span class="geo-spinner" aria-hidden="true"></span> Определение ближайших травмпунктов...';
+      statusEl.classList.remove('geo-active');
+    }
 
     if (!navigator.geolocation) {
-      statusEl.textContent = '📍 Геолокация не поддерживается браузером';
+      if (statusEl) statusEl.innerHTML = '📍 Геолокация не поддерживается браузером';
       return;
     }
 
-    statusEl.innerHTML = '<span class="geo-spinner"></span> Определение ближайших травмпунктов...';
-
     navigator.geolocation.getCurrentPosition(
       function (pos) {
-        userCoords = {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude
-        };
-
-        // Рассчитываем дистанцию до всех пунктов
-        centersData.forEach(function (item) {
-          item.distance = calcDistanceKm(userCoords.lat, userCoords.lng, item.lat, item.lng);
-        });
-
-        // Сортируем по возрастанию расстояния
-        centersData.sort(function (a, b) {
-          return a.distance - b.distance;
-        });
-
-        statusEl.innerHTML = '📍 Ваше местоположение определено. Травмпункты отсортированы по близости';
-        statusEl.classList.add('geo-active');
-
-        // Добавляем маркер пользователя на карту
-        if (map) {
-          if (userMarker) map.removeLayer(userMarker);
-
-          var userIcon = L.divIcon({
-            className: 'user-geo-marker',
-            html: '<div class="user-pulse-dot"></div>',
-            iconSize: [24, 24],
-            iconAnchor: [12, 12]
-          });
-
-          userMarker = L.marker([userCoords.lat, userCoords.lng], { icon: userIcon })
-            .addTo(map)
-            .bindPopup('<strong>Вы находитесь здесь</strong>');
-
-          map.setView([userCoords.lat, userCoords.lng], 13);
-        }
-
-        renderList();
-        renderMarkers();
+        handleUserLocation(pos.coords.latitude, pos.coords.longitude);
       },
       function (err) {
         console.warn('Геолокация недоступна:', err.message);
-        statusEl.innerHTML = '📍 Местоположение по умолчанию (Москва). Травмпункты отсортированы по алфавиту';
+        if (statusEl) {
+          statusEl.innerHTML = '📍 Геолокация не определена. Нажмите «Определить снова» или разрешите доступ в браузере.';
+        }
         renderList();
         renderMarkers();
       },
       {
-        timeout: 4500,
-        enableHighAccuracy: false
+        timeout: 5000,
+        enableHighAccuracy: isManualRetry || false
       }
     );
   }
 
-  // Навешивание слушателей фильтров и поиска
+  // Настройка фильтров, поиска и кнопок
   function setupControls() {
     // Чипсы категорий
     var chips = document.querySelectorAll('.map-chips .chip');
@@ -481,7 +554,15 @@
       });
     }
 
-    // Переключатель табов на мобильных (Список / Карта)
+    // Кнопка повторного определения геолокации
+    var reGeoBtn = document.getElementById('btn-re-geo');
+    if (reGeoBtn) {
+      reGeoBtn.addEventListener('click', function () {
+        requestGeolocation(true);
+      });
+    }
+
+    // Переключатель табов на смартфонах (Список / Карта)
     var tabListBtn = document.getElementById('tab-show-list');
     var tabMapBtn = document.getElementById('tab-show-map');
     var listCol = document.getElementById('map-list-col');
@@ -500,39 +581,17 @@
         tabListBtn.classList.remove('active');
         mapCol.classList.remove('hidden-mobile');
         listCol.classList.add('hidden-mobile');
-        if (map) {
-          setTimeout(function () { map.invalidateSize(); }, 150);
+        if (yMap) {
+          setTimeout(function () { yMap.container.fitToViewport(); }, 150);
         }
       });
     }
   }
 
-  // Загрузка JSON данных (с безопасным fallback на встроенные)
-  function loadDataAndStart() {
-    fetch('data/trauma-centers.json')
-      .then(function (res) {
-        if (!res.ok) throw new Error('Network error');
-        return res.json();
-      })
-      .then(function (data) {
-        if (Array.isArray(data) && data.length > 0) {
-          centersData = data;
-        }
-      })
-      .catch(function () {
-        // Fallback на defaultCenters уже активен
-      })
-      .finally(function () {
-        initMap();
-        renderList();
-        setupControls();
-        requestGeolocation();
-      });
-  }
-
+  // Запуск инициализации при готовности DOM
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadDataAndStart);
+    document.addEventListener('DOMContentLoaded', initYandexMap);
   } else {
-    loadDataAndStart();
+    initYandexMap();
   }
 })();

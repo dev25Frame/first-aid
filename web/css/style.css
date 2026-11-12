@@ -1512,6 +1512,43 @@ nav a[aria-current="page"] {
   line-height: 1.5;
 }
 
+.geo-status-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin: 0 auto;
+}
+
+.btn-re-geo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.95rem;
+  border-radius: var(--m3-shape-full);
+  background: var(--bg0_s);
+  border: 1px solid var(--bg2);
+  color: var(--fg1);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s var(--m3-motion);
+  box-shadow: var(--m3-elevation-1);
+}
+
+.btn-re-geo:hover {
+  background: var(--bg2);
+  color: var(--fg0);
+  border-color: var(--faded_green);
+  transform: translateY(-1px);
+}
+
+.btn-re-geo:active {
+  transform: scale(0.97);
+}
+
 .geo-status-badge {
   display: inline-flex;
   align-items: center;
@@ -1800,23 +1837,49 @@ nav a[aria-current="page"] {
   margin: 0.25rem 0 0;
 }
 
+.trauma-card-phone {
+  font-size: 0.92rem;
+  color: var(--fg2);
+  margin: 0.3rem 0;
+  line-height: 1.4;
+}
+
+.trauma-card-phone strong {
+  color: var(--fg1);
+}
+
+.trauma-phone-link {
+  color: var(--m3-primary);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.15s ease;
+}
+
+.trauma-phone-link:hover {
+  color: var(--faded_green);
+}
+
 .trauma-card-actions {
   display: flex;
   gap: 0.6rem;
-  margin-top: 0.6rem;
+  margin-top: 0.8rem;
+  flex-wrap: wrap;
 }
 
 .action-btn {
-  flex: 1;
+  flex: 1 1 180px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  padding: 0.55rem 0.8rem;
+  padding: 0.6rem 0.85rem;
   border-radius: var(--m3-shape-full);
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   font-weight: 700;
   text-decoration: none;
+  text-align: center;
+  line-height: 1.25;
   transition: all 0.2s var(--m3-motion);
   outline: none;
 }
@@ -1916,6 +1979,68 @@ nav a[aria-current="page"] {
   border: 1.5px solid var(--bg2) !important;
   box-shadow: var(--m3-elevation-3) !important;
   padding: 0.25rem;
+}
+
+/* Yandex Map Balloon Styling */
+[class*="ymaps-2-1"][class*="-balloon__content"] {
+  font-family: inherit !important;
+  padding: 10px 14px !important;
+  color: #1a1a1a !important;
+}
+
+.ymaps-balloon-card h4 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: #111;
+  line-height: 1.3;
+}
+
+.ymaps-balloon-card p {
+  font-size: 0.88rem;
+  color: #444;
+  margin: 0 0 5px;
+  line-height: 1.35;
+}
+
+.balloon-phone-link {
+  color: #1565c0 !important;
+  font-weight: 700 !important;
+  text-decoration: underline !important;
+}
+
+.balloon-phone-link:hover {
+  color: #0d47a1 !important;
+}
+
+.ymaps-balloon-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ymaps-balloon-btn {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 16px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.ymaps-btn-call {
+  background: var(--btn-bg, #2e7d32);
+  color: var(--btn-fg, #fff) !important;
+}
+
+.ymaps-btn-route {
+  background: #f0f0f0;
+  color: #111 !important;
+  border: 1px solid #ccc;
 }
 
 .leaflet-popup-tip {

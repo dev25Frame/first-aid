@@ -6,8 +6,8 @@
   <title>Травмпункты рядом • Первая помощь</title>
   <meta name="description" content="Поиск ближайших дежурных и детских травматологических пунктов с адресами, телефонами и расчетом расстояния.">
   
-  <!-- Leaflet Map CSS (No API Key Required) -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <!-- Yandex Maps JS API v2.1 -->
+  <script src="https://api-maps.yandex.ru/2.1/?apikey=0898ed33-21d0-4e96-8e43-dc2c5466d146&amp;lang=ru_RU"></script>
   <link rel="stylesheet" href="css/style.css">
   
   <script>
@@ -48,8 +48,13 @@
     <div class="map-header">
       <h1>Дежурные травмпункты</h1>
       <p>Быстрый поиск ближайших круглосуточных и детских травматологических пунктов с телефонами и навигацией.</p>
-      <div id="geo-status-badge" class="geo-status-badge" role="status" aria-live="polite">
-        <span class="geo-spinner" aria-hidden="true"></span> Определение ближайших травмпунктов...
+      <div class="geo-status-wrapper">
+        <div id="geo-status-badge" class="geo-status-badge" role="status" aria-live="polite">
+          <span class="geo-spinner" aria-hidden="true"></span> Определение ближайших травмпунктов...
+        </div>
+        <button type="button" id="btn-re-geo" class="btn-re-geo" title="Определить моё местоположение заново" aria-label="Определить местоположение заново">
+          🔄 Определить снова
+        </button>
       </div>
     </div>
 
@@ -104,9 +109,6 @@
     <p>© 2026 Команда «Здоровое будущее». Конкурс «Добрые Сайты 2026».</p>
   </footer>
 
-  <!-- Leaflet JS (No API Key Required) -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  
   <!-- Scripts -->
   <script src="js/theme.js"></script>
   <script src="js/map.js"></script>
