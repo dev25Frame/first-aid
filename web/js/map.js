@@ -1,130 +1,21 @@
 /**
  * Интерактивная карта травмпунктов • Первая помощь рядом
  * Официальная интеграция Яндекс.Карты JS API v2.1 (Ключ 0898ed33-21d0-4e96-8e43-dc2c5466d146)
- * Гибридный поиск: проверенная база + автопоиск по геолокации
+ * Полностью динамический поиск: определение положения по API ключу + поиск организаций по Яндекс.Справочнику
  * Соответствует принципам WCAG 2.1, Graceful Degradation и Mobile-First
  */
 
 (function () {
   'use strict';
 
-  // Базовый курированный датасет отделений с проверенными телефонами и статусом 24/7
-  var curatedCenters = [
-    {
-      id: 1,
-      name: "Травматологический пункт ГКБ им. С.П. Боткина",
-      type: "adult",
-      is24h: true,
-      address: "2-й Боткинский проезд, д. 5, корп. 22",
-      phone: "+7 (495) 945-00-45",
-      metro: "Беговая / Динамо",
-      hours: "Круглосуточно (24/7)",
-      lat: 55.773634,
-      lng: 37.558342,
-      desc: "Экстренный круглосуточный приём взрослых пациентов с переломами, вывихами и ранами. Рентген, операционные."
-    },
-    {
-      id: 2,
-      name: "Детский травмпункт НИИ НДХиТ (Клиника Рошаля)",
-      type: "child",
-      is24h: true,
-      address: "ул. Большая Полянка, д. 22",
-      phone: "+7 (495) 959-57-48",
-      metro: "Полянка",
-      hours: "Круглосуточно (24/7)",
-      lat: 55.738125,
-      lng: 37.618641,
-      desc: "Ведущий детский травматологический центр. Экстренная хирургическая и травматологическая помощь детям до 18 лет."
-    },
-    {
-      id: 3,
-      name: "Травмпункт НИИ скорой помощи им. Н.В. Склифосовского",
-      type: "adult",
-      is24h: true,
-      address: "Большая Сухаревская пл., д. 3, стр. 1",
-      phone: "+7 (495) 680-41-54",
-      metro: "Сухаревская / Проспект Мира",
-      hours: "Круглосуточно (24/7)",
-      lat: 55.772819,
-      lng: 37.632291,
-      desc: "Экстренная специализированная помощь при тяжёлых переломах, сочетанных травмах, ранах и ожогах."
-    },
-    {
-      id: 4,
-      name: "Детский травмпункт ДГКБ № 13 им. Н.Ф. Филатова",
-      type: "child",
-      is24h: true,
-      address: "ул. Садовая-Кудринская, д. 15, корп. 2",
-      phone: "+7 (499) 254-34-30",
-      metro: "Баррикадная / Маяковская",
-      hours: "Круглосуточно (24/7)",
-      lat: 55.764512,
-      lng: 37.589871,
-      desc: "Круглосуточный приём детей и подростков. Наложение полимерных и гипсовых повязок, рентгенография, УЗИ."
-    },
-    {
-      id: 5,
-      name: "Травматологическое отделение ГКБ № 1 им. Н.И. Пирогова",
-      type: "adult",
-      is24h: true,
-      address: "Ленинский проспект, д. 8, корп. 1",
-      phone: "+7 (495) 536-91-16",
-      metro: "Октябрьская / Шаболовская",
-      hours: "Круглосуточно (24/7)",
-      lat: 55.724781,
-      lng: 37.604218,
-      desc: "Первая Градская больница. Полный спектр амбулаторной и стационарной травматологии и ортопедии."
-    },
-    {
-      id: 6,
-      name: "Детский травмпункт Морозовской ДГКБ",
-      type: "child",
-      is24h: true,
-      address: "4-й Добрынинский пер., д. 1/9, стр. 21",
-      phone: "+7 (495) 959-88-00",
-      metro: "Добрынинская / Серпуховская",
-      hours: "Круглосуточно (24/7)",
-      lat: 55.726915,
-      lng: 37.620144,
-      desc: "Неотложная помощь детям при ушибах, вывихах, переломах конечностей. Экспресс-диагностика и вакцинация от столбняка."
-    },
-    {
-      id: 7,
-      name: "Травматологический пункт ГП № 220 (ЦАО)",
-      type: "adult",
-      is24h: false,
-      address: "ул. Заморенова, д. 27",
-      phone: "+7 (499) 255-00-24",
-      metro: "Улица 1905 года / Краснопресненская",
-      hours: "Пн-Пт: 08:00 - 20:00, Сб: 09:00 - 18:00",
-      lat: 55.759841,
-      lng: 37.568412,
-      desc: "Амбулаторное травматологическое отделение. Первичная хирургическая обработка, рентген, перевязки."
-    },
-    {
-      id: 8,
-      name: "Травматологический центр ГКБ № 67 им. Л.А. Ворохобова",
-      type: "adult",
-      is24h: true,
-      address: "ул. Саляма Адиля, д. 2/44, стр. 1",
-      phone: "+7 (495) 530-33-03",
-      metro: "Народное Ополчение / Полежаевская",
-      hours: "Круглосуточно (24/7)",
-      lat: 55.776102,
-      lng: 37.472915,
-      desc: "Многопрофильный круглосуточный травмпункт СЗАО. Компьютерная томография, рентген, противошоковая палата."
-    }
-  ];
-
   var yMap = null;
   var placemarksMap = {};
   var userPlacemark = null;
   var autoSearchControl = null;
-  var centersData = curatedCenters.slice();
+  var centersData = []; // 100% динамические данные из API Яндекс.Карт без статических записей
   var userCoords = null; // { lat, lng }
   var currentCategory = 'all';
   var searchQuery = '';
-  var isAutoSearchDone = false;
 
   // Формула гаверсинусов (Haversine formula) для точного расчета дистанции в км
   function calcDistanceKm(lat1, lon1, lat2, lon2) {
@@ -156,7 +47,7 @@
           noPlacemark: true,
           noCentering: true,
           noPopup: true,
-          resultsPerPage: 20,
+          resultsPerPage: 25,
           useMapBounds: true,
           float: 'none',
           position: { top: '-9999px', left: '-9999px' }
@@ -175,17 +66,16 @@
     if (!mapContainer) return;
 
     if (typeof ymaps === 'undefined') {
-      console.warn('API Яндекс Карт недоступно. Работает автономный режим списка.');
+      console.warn('API Яндекс Карт недоступно. Работает автономный режим.');
       var fallbackAlert = document.getElementById('map-fallback-alert');
       if (fallbackAlert) fallbackAlert.style.display = 'block';
       renderList();
       setupControls();
-      requestGeolocation(false);
       return;
     }
 
     ymaps.ready(function () {
-      var defaultCenter = [55.753215, 37.622504]; // Москва по умолчанию
+      var defaultCenter = [55.753215, 37.622504]; // Начальный центр до ответа геолокации
 
       try {
         yMap = new ymaps.Map('trauma-map', {
@@ -205,17 +95,16 @@
             var position = e.get('geoObjects').get(0);
             if (position) {
               var coords = position.geometry.getCoordinates();
-              handleUserLocation(coords[0], coords[1]);
+              handleUserLocation(coords[0], coords[1], '');
             }
           });
         }
 
-        renderMarkers();
         renderList();
         setupControls();
 
-        // Сразу запрашиваем геолокацию пользователя
-        requestGeolocation(false);
+        // Запрашиваем геолокацию пользователя через API Яндекса
+        requestYandexGeolocation(false);
 
       } catch (e) {
         console.error('Ошибка инициализации Яндекс Карт:', e);
@@ -223,7 +112,6 @@
         if (fallbackAlert) fallbackAlert.style.display = 'block';
         renderList();
         setupControls();
-        requestGeolocation(false);
       }
     });
   }
@@ -232,7 +120,7 @@
   function renderMarkers() {
     if (!yMap) return;
 
-    // Очистить существующие метки
+    // Очистить существующие метки травмпунктов
     yMap.geoObjects.removeAll();
     placemarksMap = {};
 
@@ -281,8 +169,8 @@
       placemarksMap[item.id] = placemark;
     });
 
-    // Если есть метки и нет геопозиции пользователя, подстраиваем зум по всем маркерам
-    if (filtered.length > 0 && !userCoords) {
+    // Если есть маркеры и карта создана, оптимизируем видимость
+    if (filtered.length > 0) {
       yMap.setBounds(yMap.geoObjects.getBounds(), {
         checkZoomRange: true,
         zoomMargin: 40
@@ -322,10 +210,15 @@
     }
 
     if (filtered.length === 0) {
+      var emptyMsg = userCoords
+        ? 'В данном районе травмпункты онлайн не найдены. Попробуйте изменить масштаб карты, ввести другой город или позвонить в экстренную службу 112.'
+        : 'Идёт определение вашего местоположения через API Яндекс.Карт...';
+      var emptyIcon = userCoords ? '🔍' : '⏳';
+
       container.innerHTML = '<div class="no-results-card">' +
-        '<div class="no-results-icon">🔍</div>' +
-        '<h3>Отделения не найдены</h3>' +
-        '<p>Попробуйте изменить поисковый запрос или сбросить фильтры.</p>' +
+        '<div class="no-results-icon">' + emptyIcon + '</div>' +
+        '<h3>' + (userCoords ? 'Отделения не найдены' : 'Определение координат') + '</h3>' +
+        '<p>' + emptyMsg + '</p>' +
       '</div>';
       return;
     }
@@ -418,7 +311,7 @@
   }
 
   // Обработка полученных координат пользователя
-  function handleUserLocation(lat, lng) {
+  function handleUserLocation(lat, lng, knownCity) {
     userCoords = { lat: lat, lng: lng };
 
     var statusEl = document.getElementById('geo-status-badge');
@@ -444,6 +337,12 @@
 
       yMap.geoObjects.add(userPlacemark);
       yMap.setCenter([userCoords.lat, userCoords.lng], 13, { checkZoomRange: true });
+    }
+
+    // Если город уже известен из ответа геолокации Яндекса
+    if (knownCity) {
+      performTraumaSearch(lat, lng, knownCity);
+      return;
     }
 
     // Обратное геокодирование для получения названия города
@@ -474,14 +373,14 @@
   // Поиск травмпунктов через провайдер организаций Яндекса
   function performTraumaSearch(lat, lng, cityName) {
     var statusEl = document.getElementById('geo-status-badge');
-    var distFromMoscow = calcDistanceKm(lat, lng, 55.7532, 37.6225);
     var ctrl = initAutoSearchControl();
 
     if (!ctrl) {
-      fallbackToCurated(lat, lng);
+      renderList();
       return;
     }
 
+    // Область поиска в радиусе вокруг пользователя
     ctrl.options.set({
       boundedBy: [[lat - 0.35, lng - 0.35], [lat + 0.35, lng + 0.35]],
       useMapBounds: true,
@@ -491,7 +390,7 @@
     var searchQuery = (cityName ? cityName + ' ' : '') + 'травмпункт';
 
     if (statusEl) {
-      statusEl.innerHTML = '<span class="geo-spinner" aria-hidden="true"></span> Поиск отделений в ' + (cityName ? 'г. ' + cityName : 'вашем районе') + '...';
+      statusEl.innerHTML = '<span class="geo-spinner" aria-hidden="true"></span> Поиск травмпунктов в ' + (cityName ? 'г. ' + cityName : 'вашем районе') + '...';
     }
 
     ctrl.search(searchQuery).then(function () {
@@ -499,19 +398,22 @@
 
       if (rawResults.length === 0 && cityName) {
         return ctrl.search('травмпункт').then(function () {
-          processSearchResults(ctrl.getResultsArray(), lat, lng, cityName, distFromMoscow);
+          processSearchResults(ctrl.getResultsArray(), lat, lng, cityName);
         });
       } else {
-        processSearchResults(rawResults, lat, lng, cityName, distFromMoscow);
+        processSearchResults(rawResults, lat, lng, cityName);
       }
     }).catch(function (err) {
       console.warn('Ошибка поиска травмпунктов:', err);
-      fallbackToCurated(lat, lng);
+      if (statusEl) {
+        statusEl.innerHTML = '📍 Не удалось загрузить травмпункты. Попробуйте обновить страницу.';
+      }
+      renderList();
     });
   }
 
-  // Обработка результатов поиска и рендер
-  function processSearchResults(rawResults, lat, lng, cityName, distFromMoscow) {
+  // Обработка результатов поиска и рендер (100% динамические данные)
+  function processSearchResults(rawResults, lat, lng, cityName) {
     var statusEl = document.getElementById('geo-status-badge');
     var foundItems = [];
 
@@ -530,6 +432,7 @@
       var isChild = /детск|педиатрич/i.test(name) || /детск/i.test(address);
       var distance = calcDistanceKm(lat, lng, coords[0], coords[1]);
 
+      // Отсекаем объекты, находящиеся дальше 120 км от пользователя (выбросы)
       if (distance > 120) return;
 
       foundItems.push({
@@ -549,26 +452,7 @@
     });
 
     if (foundItems.length > 0) {
-      if (distFromMoscow > 70) {
-        // За пределами Москвы показываем исключительно локальные травмпункты
-        centersData = foundItems;
-      } else {
-        // В Москве/МО объединяем с эталонной базой
-        var merged = curatedCenters.slice();
-        merged.forEach(function (c) {
-          c.distance = calcDistanceKm(lat, lng, c.lat, c.lng);
-        });
-        foundItems.forEach(function (fItem) {
-          var isDup = merged.some(function (m) {
-            return calcDistanceKm(fItem.lat, fItem.lng, m.lat, m.lng) < 0.4;
-          });
-          if (!isDup) {
-            merged.push(fItem);
-          }
-        });
-        centersData = merged;
-      }
-
+      centersData = foundItems;
       centersData.sort(function (a, b) { return a.distance - b.distance; });
 
       if (statusEl) {
@@ -576,14 +460,10 @@
         statusEl.classList.add('geo-active');
       }
     } else {
-      if (distFromMoscow > 70) {
-        centersData = [];
-        if (statusEl) {
-          statusEl.innerHTML = '📍 ' + (cityName ? cityName + ': ' : '') + 'травмпункты поблизости не найдены в онлайн-справочнике. При травмах звоните 112.';
-          statusEl.classList.add('geo-active');
-        }
-      } else {
-        fallbackToCurated(lat, lng);
+      centersData = [];
+      if (statusEl) {
+        statusEl.innerHTML = '📍 ' + (cityName ? cityName + ': ' : '') + 'травмпункты поблизости не найдены в онлайн-справочнике. При травмах звоните 112.';
+        statusEl.classList.add('geo-active');
       }
     }
 
@@ -598,53 +478,85 @@
     }
   }
 
-  // Резервный возврат к эталонной базе (Москва)
-  function fallbackToCurated(lat, lng) {
-    var statusEl = document.getElementById('geo-status-badge');
-    centersData = curatedCenters.slice();
-    if (lat && lng) {
-      centersData.forEach(function (item) {
-        item.distance = calcDistanceKm(lat, lng, item.lat, item.lng);
-      });
-      centersData.sort(function (a, b) { return a.distance - b.distance; });
-    }
-    if (statusEl) {
-      statusEl.innerHTML = '📍 Показаны дежурные травматологические центры';
-      statusEl.classList.add('geo-active');
-    }
-    renderList();
-    renderMarkers();
-  }
-
-  // Запрос геолокации через браузер с жестким тайм-аутом
-  function requestGeolocation(isManualRetry) {
+  // Определение местоположения через API Яндекс.Карт (по API-ключу / GeoIP / браузерному GPS)
+  function requestYandexGeolocation(isManualRetry) {
     var statusEl = document.getElementById('geo-status-badge');
     if (statusEl) {
-      statusEl.innerHTML = '<span class="geo-spinner" aria-hidden="true"></span> Определение ближайших травмпунктов...';
+      statusEl.innerHTML = '<span class="geo-spinner" aria-hidden="true"></span> Определение местоположения через API...';
       statusEl.classList.remove('geo-active');
     }
 
+    if (typeof ymaps === 'undefined' || !ymaps.geolocation) {
+      fallbackBrowserGeolocation();
+      return;
+    }
+
+    // Если ручной повтор — запрашиваем через браузерный GPS для максимальной точности,
+    // иначе используем 'auto' (быстрое определение по IP/провайдеру API без блокирующих окон)
+    var providerType = isManualRetry ? 'browser' : 'auto';
+
+    ymaps.geolocation.get({
+      provider: providerType,
+      autoReverseGeocode: true,
+      mapStateAutoApply: true,
+      timeout: 8000
+    }).then(function (result) {
+      var firstGeo = result.geoObjects.get(0);
+      if (!firstGeo) throw new Error('Геопозиция не определена');
+
+      var coords = firstGeo.geometry.getCoordinates();
+      var localities = firstGeo.getLocalities();
+      var cityName = (localities && localities.length > 0) ? localities[0] : '';
+      if (!cityName) {
+        var adminAreas = firstGeo.getAdministrativeAreas();
+        if (adminAreas && adminAreas.length > 0) cityName = adminAreas[0];
+      }
+
+      handleUserLocation(coords[0], coords[1], cityName);
+    }).catch(function (err) {
+      console.warn('Ошибка первичной геолокации Яндекс API, пробуем альтернативный способ:', err);
+      if (isManualRetry && providerType === 'browser') {
+        // Повторяем с провайдером 'auto'
+        ymaps.geolocation.get({ provider: 'auto', autoReverseGeocode: true }).then(function (res) {
+          var geo = res.geoObjects.get(0);
+          if (geo) {
+            var coords = geo.geometry.getCoordinates();
+            var localities = geo.getLocalities();
+            var city = (localities && localities.length > 0) ? localities[0] : '';
+            handleUserLocation(coords[0], coords[1], city);
+            return;
+          }
+          fallbackBrowserGeolocation();
+        }).catch(function () {
+          fallbackBrowserGeolocation();
+        });
+      } else {
+        fallbackBrowserGeolocation();
+      }
+    });
+  }
+
+  // Резервный опрос через нативный navigator.geolocation
+  function fallbackBrowserGeolocation() {
+    var statusEl = document.getElementById('geo-status-badge');
     if (!navigator.geolocation) {
-      if (statusEl) statusEl.innerHTML = '📍 Геолокация не поддерживается браузером';
+      if (statusEl) statusEl.innerHTML = '📍 Геолокация не поддерживается. Введите ваш город в строке поиска.';
+      renderList();
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
       function (pos) {
-        handleUserLocation(pos.coords.latitude, pos.coords.longitude);
+        handleUserLocation(pos.coords.latitude, pos.coords.longitude, '');
       },
       function (err) {
-        console.warn('Геолокация недоступна:', err.message);
+        console.warn('Нативная геолокация недоступна:', err.message);
         if (statusEl) {
-          statusEl.innerHTML = '📍 Геолокация не определена. Нажмите «Определить снова» или введите ваш город в строке поиска.';
+          statusEl.innerHTML = '📍 Местоположение не определено. Нажмите «Определить снова» или введите ваш город в строке поиска.';
         }
         renderList();
-        renderMarkers();
       },
-      {
-        timeout: 7000,
-        enableHighAccuracy: isManualRetry || false
-      }
+      { timeout: 7000, enableHighAccuracy: true }
     );
   }
 
@@ -709,7 +621,7 @@
     var reGeoBtn = document.getElementById('btn-re-geo');
     if (reGeoBtn) {
       reGeoBtn.addEventListener('click', function () {
-        requestGeolocation(true);
+        requestYandexGeolocation(true);
       });
     }
 
