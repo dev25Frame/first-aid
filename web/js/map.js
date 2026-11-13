@@ -12,6 +12,7 @@
   var yMap = null;
   var placemarksMap = {};
   var userPlacemark = null;
+  var radiusCircle = null;
   var traumaSearchControl = null;
   var hospitalSearchControl = null;
 
@@ -20,6 +21,7 @@
   var currentCity = '';
   var currentCategory = 'all'; // 'all', 'trauma', 'hospital'
   var searchQuery = '';
+  var currentRadius = 50; // По умолчанию 50 км
 
   // Формула гаверсинусов (Haversine formula) для точного расчета дистанции в км
   function calcDistanceKm(lat1, lon1, lat2, lon2) {
@@ -146,6 +148,26 @@
     });
   }
 
+  // Обновление круга радиуса на карте
+  function updateRadiusCircle() {
+    if (!yMap || !userCoords) return;
+
+    if (radiusCircle) {
+      yMap.geoObjects.remove(radiusCircle);
+    }
+
+    radiusCircle = new ymaps.Circle([[userCoords.lat, userCoords.lng], currentRadius * 1000], {
+      hintContent: 'Радиус поиска: ' + currentRadius + ' км'
+    }, {
+      fillColor: 'rgba(71, 118, 133, 0.08)',
+      strokeColor: 'rgba(71, 118, 133, 0.5)',
+      strokeWidth: 2,
+      strokeStyle: 'shortdash'
+    });
+
+    yMap.geoObjects.add(radiusCircle);
+  }
+
   // Отрисовка маркеров на карте Яндекса
   function renderMarkers() {
     if (!yMap) return;
@@ -154,7 +176,10 @@
     yMap.geoObjects.removeAll();
     placemarksMap = {};
 
-    // Восстанавливаем метку пользователя
+    // Восстанавливаем круг радиуса и метку пользователя
+    if (radiusCircle) {
+      yMap.geoObjects.add(radiusCircle);
+    }
     if (userPlacemark) {
       yMap.geoObjects.add(userPlacemark);
     }
@@ -204,7 +229,12 @@
       placemarksMap[item.id] = placemark;
     });
 
-    if (filtered.length > 0) {
+    if (radiusCircle) {
+      yMap.setBounds(radiusCircle.geometry.getBounds(), {
+        checkZoomRange: true,
+        zoomMargin: 35
+      });
+    } else if (filtered.length > 0) {
       yMap.setBounds(yMap.geoObjects.getBounds(), {
         checkZoomRange: true,
         zoomMargin: 40
@@ -212,14 +242,19 @@
     }
   }
 
-  // Фильтрация отделений по категории («Все», «Травмпункты», «Больницы») и поиску
+  // Фильтрация отделений по категории, радиусу и поисковой строке
   function getFilteredCenters() {
     return centersData.filter(function (item) {
-      // 1. Фильтр по категории
+      // 1. Фильтр по радиусу (25, 50, 75, 100 км)
+      if (item.distance !== undefined && item.distance > currentRadius) {
+        return false;
+      }
+
+      // 2. Фильтр по категории
       if (currentCategory === 'trauma' && item.facilityType !== 'trauma') return false;
       if (currentCategory === 'hospital' && item.facilityType !== 'hospital') return false;
 
-      // 2. Поиск по строке
+      // 3. Поиск по строке
       if (searchQuery) {
         var q = searchQuery.toLowerCase();
         var matchName = item.name.toLowerCase().indexOf(q) !== -1;
@@ -373,8 +408,10 @@
       });
 
       yMap.geoObjects.add(userPlacemark);
-      yMap.setCenter([userCoords.lat, userCoords.lng], 12, { checkZoomRange: true });
+      yMap.setCenter([userCoords.lat, userCoords.lng], 11, { checkZoomRange: true });
     }
+
+    updateRadiusCircle();
 
     // Если город уже известен
     if (knownCity) {
@@ -419,8 +456,8 @@
       return;
     }
 
-    // Область поиска вокруг пользователя
-    var boundBox = [[lat - 0.45, lng - 0.45], [lat + 0.45, lng + 0.45]];
+    // Область поиска до 100 км вокруг пользователя
+    var boundBox = [[lat - 0.9, lng - 0.9], [lat + 0.9, lng + 0.9]];
     traumaSearchControl.options.set({
       boundedBy: boundBox,
       useMapBounds: true,
@@ -493,7 +530,7 @@
       var isChild = /детск|педиатрич/i.test(name) || /детск/i.test(address);
       var distance = calcDistanceKm(lat, lng, coords[0], coords[1]);
 
-      if (distance > 70) return;
+      if (distance > 110) return;
 
       items.push({
         id: ++idCounter,
@@ -534,7 +571,7 @@
       var isChild = /детск|педиатрич/i.test(name) || /детск/i.test(address);
       var distance = calcDistanceKm(lat, lng, coords[0], coords[1]);
 
-      if (distance > 70) return;
+      if (distance > 110) return;
 
       items.push({
         id: ++idCounter,
@@ -560,7 +597,7 @@
 
     if (centersData.length > 0) {
       if (statusEl) {
-        statusEl.innerHTML = '📍 ' + (cityName ? cityName + ': ' : '') + 'найдено учреждений: ' + visibleFiltered.length;
+        statusEl.innerHTML = '📍 ' + (cityName ? cityName + ': ' : '') + 'найдено учреждений: ' + visibleFiltered.length + ' (в радиусе ' + currentRadius + ' км)';
         statusEl.classList.add('geo-active');
       }
     } else {
@@ -668,11 +705,58 @@
         var statusEl = document.getElementById('geo-status-badge');
         if (statusEl && userCoords) {
           var filtered = getFilteredCenters();
-          statusEl.innerHTML = '📍 ' + (currentCity ? currentCity + ': ' : '') + 'найдено учреждений: ' + filtered.length;
+          statusEl.innerHTML = '📍 ' + (currentCity ? currentCity + ': ' : '') + 'найдено учреждений: ' + filtered.length + ' (в радиусе ' + currentRadius + ' км)';
         }
 
         renderList();
         renderMarkers();
+      });
+    });
+
+    // Слайдер радиуса поиска (25, 50, 75, 100 км)
+    var radiusSlider = document.getElementById('radius-slider');
+    var radiusValBadge = document.getElementById('radius-val-badge');
+    var radiusTicks = document.querySelectorAll('.radius-ticks .tick');
+
+    function setRadius(newRadius) {
+      currentRadius = parseInt(newRadius, 10);
+      if (radiusSlider) radiusSlider.value = currentRadius;
+      if (radiusValBadge) radiusValBadge.textContent = currentRadius + ' км';
+
+      // Обновляем активную метку
+      radiusTicks.forEach(function (tick) {
+        var val = parseInt(tick.getAttribute('data-val'), 10);
+        if (val === currentRadius) {
+          tick.classList.add('active');
+        } else {
+          tick.classList.remove('active');
+        }
+      });
+
+      // Обновляем круг на карте
+      updateRadiusCircle();
+
+      // Обновляем статус
+      var statusEl = document.getElementById('geo-status-badge');
+      if (statusEl && userCoords) {
+        var visible = getFilteredCenters();
+        statusEl.innerHTML = '📍 ' + (currentCity ? currentCity + ': ' : '') + 'найдено учреждений: ' + visible.length + ' (в радиусе ' + currentRadius + ' км)';
+      }
+
+      renderList();
+      renderMarkers();
+    }
+
+    if (radiusSlider) {
+      radiusSlider.addEventListener('input', function (e) {
+        setRadius(e.target.value);
+      });
+    }
+
+    radiusTicks.forEach(function (tick) {
+      tick.addEventListener('click', function () {
+        var val = tick.getAttribute('data-val');
+        setRadius(val);
       });
     });
 
@@ -705,10 +789,11 @@
                 var localities = firstGeo.getLocalities();
                 var city = (localities && localities.length > 0) ? localities[0] : query;
                 if (yMap) {
-                  yMap.setCenter(coords, 12, { checkZoomRange: true });
+                  yMap.setCenter(coords, 11, { checkZoomRange: true });
                 }
                 userCoords = { lat: coords[0], lng: coords[1] };
                 currentCity = city;
+                updateRadiusCircle();
                 performMedicalSearch(coords[0], coords[1], city);
               } else {
                 if (statusEl) statusEl.innerHTML = '📍 Локация «' + query + '» не найдена';

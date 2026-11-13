@@ -76,6 +76,23 @@
         <button type="button" class="chip" data-category="trauma">🩹 Травмпункты</button>
         <button type="button" class="chip" data-category="hospital">🏥 Больницы</button>
       </div>
+
+      <!-- Radius Selector Slider (25 - 50 - 75 - 100 км) -->
+      <div class="map-radius-control" role="group" aria-label="Радиус поиска отделений">
+        <div class="radius-header">
+          <span class="radius-label">🎯 Радиус поиска:</span>
+          <span id="radius-val-badge" class="radius-val-badge">50 км</span>
+        </div>
+        <div class="radius-slider-wrapper">
+          <input type="range" id="radius-slider" min="25" max="100" step="25" value="50" aria-label="Радиус поиска в километрах">
+          <div class="radius-ticks" aria-hidden="true">
+            <span class="tick" data-val="25">25 км</span>
+            <span class="tick active" data-val="50">50 км</span>
+            <span class="tick" data-val="75">75 км</span>
+            <span class="tick" data-val="100">100 км</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Mobile Tabs (List / Map) -->
