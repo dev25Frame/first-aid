@@ -46,8 +46,8 @@
 
   <main class="map-page-wrapper">
     <div class="map-header">
-      <h1>Дежурные травмпункты и больницы</h1>
-      <p>Быстрый поиск ближайших круглосуточных травматологических отделений и больниц скорой помощи с телефонами и навигацией.</p>
+      <h1>Травмпункты и больницы</h1>
+      <p>Быстрый поиск дежурных травматологических отделений и больниц с телефонами и навигацией.</p>
       <div class="geo-status-wrapper">
         <div id="geo-status-badge" class="geo-status-badge" role="status" aria-live="polite">
           <span class="geo-spinner" aria-hidden="true"></span> Определение ближайших отделений...
@@ -63,7 +63,7 @@
       ℹ️ Интерактивная карта работает в автономном режиме. Список отделений с телефонами и адресами полностью доступен ниже.
     </div>
 
-    <!-- Controls Bar: Search, Category Chips & Radius Slider -->
+    <!-- Controls Bar: Search & Simple Filters -->
     <div class="map-controls-bar">
       <div class="map-search-box">
         <span class="search-icon-decor" aria-hidden="true">🔍</span>
@@ -71,30 +71,10 @@
       </div>
 
       <div class="map-chips" role="toolbar" aria-label="Фильтры отделений">
-        <span class="map-chips-label">Фильтр:</span>
-        <button type="button" class="chip active" data-category="all">🌟 Все отделения</button>
+        <span class="map-chips-label">Показать:</span>
+        <button type="button" class="chip active" data-category="all">🌟 Все</button>
         <button type="button" class="chip" data-category="trauma">🩹 Травмпункты</button>
-        <button type="button" class="chip" data-category="hospital">🏥 Больницы СМП</button>
-        <button type="button" class="chip" data-category="24h">🌙 Круглосуточно (24/7)</button>
-        <button type="button" class="chip" data-category="child">👶 Детские</button>
-        <button type="button" class="chip" data-category="adult">🏥 Взрослые</button>
-      </div>
-
-      <!-- Radius Selector Slider (25 - 50 - 75 - 100 км) -->
-      <div class="map-radius-control" role="group" aria-label="Радиус поиска отделений">
-        <div class="radius-header">
-          <span class="radius-label">🎯 Радиус поиска:</span>
-          <span id="radius-val-badge" class="radius-val-badge">50 км</span>
-        </div>
-        <div class="radius-slider-wrapper">
-          <input type="range" id="radius-slider" min="25" max="100" step="25" value="50" aria-label="Радиус поиска в километрах">
-          <div class="radius-ticks" aria-hidden="true">
-            <span class="tick" data-val="25">25 км</span>
-            <span class="tick active" data-val="50">50 км</span>
-            <span class="tick" data-val="75">75 км</span>
-            <span class="tick" data-val="100">100 км</span>
-          </div>
-        </div>
+        <button type="button" class="chip" data-category="hospital">🏥 Больницы</button>
       </div>
     </div>
 
