@@ -1,4 +1,4 @@
-/**
+q/**
  * Интерактивная карта экстренной помощи • Первая помощь рядом
  * Официальная интеграция Яндекс.Карты JS API v2.1 (Ключ 0898ed33-21d0-4e96-8e43-dc2c5466d146)
  * Полностью динамический поиск: определение положения по API ключу + поиск травмпунктов и больниц СМП
@@ -488,7 +488,7 @@
     });
 
     var qTrauma = (cityName ? cityName + ' ' : '') + 'травмпункт';
-    var qHospital = (cityName ? cityName + ' ' : '') + 'больница скорой помощи';
+    var qHospital = (cityName ? cityName + ' ' : '') + 'больница';
 
     if (statusEl) {
       statusEl.innerHTML = '<span class="geo-spinner" aria-hidden="true"></span> Поиск травмпунктов и больниц скорой помощи в ' + (cityName ? 'г. ' + cityName : 'вашем районе') + '...';
