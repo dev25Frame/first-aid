@@ -488,7 +488,7 @@
     });
 
     var qTrauma = (cityName ? cityName + ' ' : '') + 'травмпункт';
-    var qHospital = (cityName ? cityName + ' ' : '') + 'Больница скорой медицинской помощи';
+    var qHospital = (cityName ? cityName + ' ' : '') + 'Больница';
 
     if (statusEl) {
       statusEl.innerHTML = '<span class="geo-spinner" aria-hidden="true"></span> Поиск травмпунктов и больниц скорой помощи в ' + (cityName ? 'г. ' + cityName : 'вашем районе') + '...';
