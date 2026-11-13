@@ -2,7 +2,7 @@
  * Интерактивная карта экстренной помощи • Первая помощь рядом
  * Официальная интеграция Яндекс.Карты JS API v2.1 (Ключ 0898ed33-21d0-4e96-8e43-dc2c5466d146)
  * Полностью динамический поиск: определение положения по API ключу + поиск травмпунктов и больниц СМП
- * Поддержка выбора радиуса (25-50-75-100 км) и фильтра по больницам скорой помощи
+ * Поддержка выбора радиуса (25-50-75-100 км) и фильтра по больницам
  * Соответствует принципам WCAG 2.1, Graceful Degradation и Mobile-First
  */
 
@@ -491,7 +491,7 @@
     var qHospital = (cityName ? cityName + ' ' : '') + 'Больница';
 
     if (statusEl) {
-      statusEl.innerHTML = '<span class="geo-spinner" aria-hidden="true"></span> Поиск травмпунктов и больниц скорой помощи в ' + (cityName ? 'г. ' + cityName : 'вашем районе') + '...';
+      statusEl.innerHTML = '<span class="geo-spinner" aria-hidden="true"></span> Поиск травмпунктов и больниц ' + (cityName ? 'г. ' + cityName : 'вашем районе') + '...';
     }
 
     // Параллельный запрос к обоим профилям экстренных отделений
@@ -508,7 +508,7 @@
     var pHospital = hospitalSearchControl.search(qHospital).then(function () {
       var res = hospitalSearchControl.getResultsArray();
       if (res.length === 0 && cityName) {
-        return hospitalSearchControl.search('больница скорой медицинской помощи').then(function () {
+        return hospitalSearchControl.search('больница').then(function () {
           return hospitalSearchControl.getResultsArray();
         });
       }
@@ -567,12 +567,12 @@
       });
     });
 
-    // 2. Обрабатываем больницы скорой медицинской помощи (БСМП/дежурные стационары)
+    // 2. Обрабатываем больницы
     rawHospital.forEach(function (obj) {
       var coords = obj.geometry.getCoordinates();
       if (!coords || coords.length !== 2) return;
 
-      var name = obj.properties.get('name') || 'Больница скорой медицинской помощи';
+      var name = obj.properties.get('name') || 'Больница';
       var desc = obj.properties.get('description') || '';
       var compMeta = obj.properties.get('CompanyMetaData') || {};
 
@@ -603,7 +603,7 @@
         hours: hoursText,
         lat: coords[0],
         lng: coords[1],
-        desc: compMeta.url ? ('Официальный сайт: ' + compMeta.url) : 'Клиническая больница скорой помощи. Экстренный приёмный покой.',
+        desc: compMeta.url ? ('Официальный сайт: ' + compMeta.url) : 'Клиническая больница. Экстренный приёмный покой.',
         distance: distance
       });
     });
