@@ -35,8 +35,27 @@
     return R * c;
   }
 
+  // Название категории для отображения в статусе и уведомлениях
+  function getCategoryTitle(cat) {
+    switch (cat) {
+      case 'trauma': return 'Травмпункты';
+      case 'hospital': return 'Больницы';
+      case '24h': return 'Круглосуточно (24/7)';
+      case 'child': return 'Детские отделения';
+      case 'eye': return 'Травмы глаз';
+      case 'burn': return 'Ожоговые центры';
+      default: return 'Все отделения';
+    }
+  }
+
   // Получение пресета иконки Яндекс.Карт в зависимости от типа учреждения
   function getYmapsPreset(item) {
+    if (/глаз|офтальмол/i.test(item.name)) {
+      return 'islands#violetMedicalIcon';
+    }
+    if (/ожог|комбустиол/i.test(item.name)) {
+      return 'islands#darkOrangeMedicalIcon';
+    }
     if (item.facilityType === 'hospital') {
       return item.type === 'child' ? 'islands#darkBlueMedicalIcon' : 'islands#blueMedicalIcon';
     }
@@ -242,7 +261,7 @@
     }
   }
 
-  // Фильтрация отделений по категории, радиусу и поисковой строке
+  // Фильтрация отделений по категории и радиусу
   function getFilteredCenters() {
     return centersData.filter(function (item) {
       // 1. Фильтр по радиусу (25, 50, 75, 100 км)
@@ -250,15 +269,25 @@
         return false;
       }
 
-      // 2. Фильтр по категории («Все», «Травмпункты», «Больницы»)
+      // 2. Фильтр по категориям
       if (currentCategory === 'trauma') {
         if (!item.isTrauma && item.facilityType !== 'trauma') return false;
-      }
-      if (currentCategory === 'hospital') {
+      } else if (currentCategory === 'hospital') {
         if (!item.isHospital && item.facilityType !== 'hospital') return false;
+      } else if (currentCategory === '24h') {
+        if (!item.is24h) return false;
+      } else if (currentCategory === 'child') {
+        var isChild = item.type === 'child' || /детск|педиатрич/i.test(item.name + ' ' + item.desc);
+        if (!isChild) return false;
+      } else if (currentCategory === 'eye') {
+        var isEye = /глаз|офтальмол|микрохирурги/i.test(item.name + ' ' + item.desc);
+        if (!isEye) return false;
+      } else if (currentCategory === 'burn') {
+        var isBurn = /ожог|комбустиол/i.test(item.name + ' ' + item.desc);
+        if (!isBurn) return false;
       }
 
-      // 3. Поиск по строке
+      // 3. Поиск по строке (если задана)
       if (searchQuery) {
         var q = searchQuery.toLowerCase();
         var matchName = item.name.toLowerCase().indexOf(q) !== -1;
@@ -284,8 +313,9 @@
     }
 
     if (filtered.length === 0) {
+      var catTitle = getCategoryTitle(currentCategory);
       var emptyMsg = userCoords
-        ? 'Отделения не найдены. Попробуйте выбрать другой фильтр, изменить масштаб карты или ввести город в строке поиска.'
+        ? 'Отделения в категории «' + catTitle + '» в радиусе ' + currentRadius + ' км не найдены. Попробуйте увеличить радиус поиска (до 75–100 км) или выбрать «Все категории».'
         : 'Идёт определение вашего местоположения через API Яндекс.Карт...';
       var emptyIcon = userCoords ? '🔍' : '⏳';
 
@@ -303,6 +333,12 @@
       var badgeLabel = item.facilityType === 'hospital'
         ? (item.type === 'child' ? '👶 Детская больница' : '🏥 Больница')
         : (item.type === 'child' ? '👶 Детский травмпункт' : (item.is24h ? '🌙 Травмпункт (24/7)' : '🩹 Травмпункт'));
+
+      if (/глаз|офтальмол/i.test(item.name)) {
+        badgeLabel = '👁️ Глазная травма';
+      } else if (/ожог|комбустиол/i.test(item.name)) {
+        badgeLabel = '🔥 Ожоговый центр';
+      }
 
       var distBadge = item.distance !== undefined
         ? '<span class="item-dist-pill">📍 ' + item.distance.toFixed(1) + ' км</span>'
@@ -526,6 +562,42 @@
     });
   }
 
+  // Целевой дозапрос специализированных категорий (офтальмология, ожоги), если их нет в исходной выборке
+  function fetchSpecializedCategory(category) {
+    if (!userCoords) return;
+    var statusEl = document.getElementById('geo-status-badge');
+    var queryText = category === 'eye' ? 'глазная травматология' : 'ожоговый центр';
+    var label = category === 'eye' ? 'офтальмологических отделений' : 'ожоговых центров';
+
+    if (statusEl) {
+      statusEl.innerHTML = '<span class="geo-spinner" aria-hidden="true"></span> Поиск ' + label + '...';
+      statusEl.classList.remove('geo-active');
+    }
+
+    var dLat = 105 / 111.32;
+    var cosLat = Math.cos(userCoords.lat * Math.PI / 180);
+    var dLng = 105 / (111.32 * Math.max(Math.abs(cosLat), 0.25));
+    var boundBox = [
+      [userCoords.lat - dLat, userCoords.lng - dLng],
+      [userCoords.lat + dLat, userCoords.lng + dLng]
+    ];
+
+    searchSingleQuery(queryText, boundBox).then(function (results) {
+      if (results && results.length > 0) {
+        var group = [{ categoryHint: category === 'eye' ? 'trauma' : 'hospital', list: results }];
+        processAllMedicalResults(group, userCoords.lat, userCoords.lng, currentCity);
+      } else {
+        updateStatusCount();
+        renderList();
+        renderMarkers();
+      }
+    }).catch(function () {
+      updateStatusCount();
+      renderList();
+      renderMarkers();
+    });
+  }
+
   // Поиск травмпунктов и больниц через провайдер организаций Яндекса
   function performMedicalSearch(lat, lng, cityName) {
     var statusEl = document.getElementById('geo-status-badge');
@@ -743,26 +815,64 @@
     );
   }
 
-  // Настройка фильтров, поиска и кнопок
+  // Настройка фильтров, выбора категории, радиуса и кнопок
   function setupControls() {
-    // Чипсы категорий: «Все», «Травмпункты», «Больницы»
+    var categorySelect = document.getElementById('map-category-select');
     var chips = document.querySelectorAll('.map-chips .chip');
+
+    // Функция обновления статусной строки
+    function updateStatusCount() {
+      var statusEl = document.getElementById('geo-status-badge');
+      if (statusEl && userCoords) {
+        var visible = getFilteredCenters();
+        var displayCity = cleanCityTitle(currentCity) || currentCity || '';
+        var catTitle = getCategoryTitle(currentCategory);
+        statusEl.innerHTML = '📍 ' + (displayCity ? displayCity + ': ' : '') + 'найдено (' + catTitle + '): ' + visible.length + ' (в радиусе ' + currentRadius + ' км)';
+      }
+    }
+
+    // Обработка смены категории
+    function setCategory(cat) {
+      currentCategory = cat;
+
+      // Синхронизируем значение выпадающего списка
+      if (categorySelect && categorySelect.value !== cat) {
+        categorySelect.value = cat;
+      }
+
+      // Синхронизируем состояние чипсов быстрого выбора
+      chips.forEach(function (c) {
+        if (c.getAttribute('data-category') === cat) {
+          c.classList.add('active');
+        } else {
+          c.classList.remove('active');
+        }
+      });
+
+      // Если выбрана специализированная категория (глазная травма или ожоги) и таких объектов пока нет в выборке
+      var filtered = getFilteredCenters();
+      if (filtered.length === 0 && (cat === 'eye' || cat === 'burn') && userCoords) {
+        fetchSpecializedCategory(cat);
+        return;
+      }
+
+      updateStatusCount();
+      renderList();
+      renderMarkers();
+    }
+
+    // Слушатель выпадающего списка категорий
+    if (categorySelect) {
+      categorySelect.addEventListener('change', function (e) {
+        setCategory(e.target.value);
+      });
+    }
+
+    // Слушатели быстрых чипсов
     chips.forEach(function (chip) {
       chip.addEventListener('click', function () {
-        chips.forEach(function (c) { c.classList.remove('active'); });
-        chip.classList.add('active');
-        currentCategory = chip.getAttribute('data-category');
-
-        // Обновляем статус с количеством в выбранной категории
-        var statusEl = document.getElementById('geo-status-badge');
-        if (statusEl && userCoords) {
-          var filtered = getFilteredCenters();
-          var displayCity = cleanCityTitle(currentCity) || currentCity || '';
-          statusEl.innerHTML = '📍 ' + (displayCity ? displayCity + ': ' : '') + 'найдено учреждений: ' + filtered.length + ' (в радиусе ' + currentRadius + ' км)';
-        }
-
-        renderList();
-        renderMarkers();
+        var cat = chip.getAttribute('data-category');
+        setCategory(cat);
       });
     });
 
@@ -789,14 +899,7 @@
       // Обновляем круг на карте
       updateRadiusCircle();
 
-      // Обновляем статус
-      var statusEl = document.getElementById('geo-status-badge');
-      if (statusEl && userCoords) {
-        var visible = getFilteredCenters();
-        var displayCity = cleanCityTitle(currentCity) || currentCity || '';
-        statusEl.innerHTML = '📍 ' + (displayCity ? displayCity + ': ' : '') + 'найдено учреждений: ' + visible.length + ' (в радиусе ' + currentRadius + ' км)';
-      }
-
+      updateStatusCount();
       renderList();
       renderMarkers();
     }
@@ -813,52 +916,6 @@
         setRadius(val);
       });
     });
-
-    // Строка поиска
-    var searchInput = document.getElementById('map-search-input');
-    if (searchInput) {
-      // 1. Быстрая фильтрация текущего списка
-      searchInput.addEventListener('input', function (e) {
-        searchQuery = e.target.value.trim();
-        renderList();
-        renderMarkers();
-      });
-
-      // 2. Поиск по городам России по нажатию Enter
-      searchInput.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          var query = searchInput.value.trim();
-          if (query.length >= 3 && typeof ymaps !== 'undefined' && ymaps.geocode) {
-            var statusEl = document.getElementById('geo-status-badge');
-            if (statusEl) {
-              statusEl.innerHTML = '<span class="geo-spinner" aria-hidden="true"></span> Поиск отделений в «' + query + '»...';
-              statusEl.classList.add('geo-active');
-            }
-
-            ymaps.geocode(query, { results: 1 }).then(function (res) {
-              var firstGeo = res.geoObjects.get(0);
-              if (firstGeo) {
-                var coords = firstGeo.geometry.getCoordinates();
-                var localities = firstGeo.getLocalities();
-                var city = (localities && localities.length > 0) ? localities[0] : query;
-                if (yMap) {
-                  yMap.setCenter(coords, 11, { checkZoomRange: true });
-                }
-                userCoords = { lat: coords[0], lng: coords[1] };
-                currentCity = city;
-                updateRadiusCircle();
-                performMedicalSearch(coords[0], coords[1], city);
-              } else {
-                if (statusEl) statusEl.innerHTML = '📍 Локация «' + query + '» не найдена';
-              }
-            }).catch(function (err) {
-              console.warn('Ошибка поиска города:', err);
-            });
-          }
-        }
-      });
-    }
 
     // Кнопка повторного определения геолокации
     var reGeoBtn = document.getElementById('btn-re-geo');

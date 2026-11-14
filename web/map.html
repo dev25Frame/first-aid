@@ -63,18 +63,33 @@
       ℹ️ Интерактивная карта работает в автономном режиме. Список отделений с телефонами и адресами полностью доступен ниже.
     </div>
 
-    <!-- Controls Bar: Search & Simple Filters -->
+    <!-- Controls Bar: Category Dropdown & Radius Slider -->
     <div class="map-controls-bar">
-      <div class="map-search-box">
-        <span class="search-icon-decor" aria-hidden="true">🔍</span>
-        <input type="search" id="map-search-input" placeholder="Поиск по названию или введите ваш город (Enter)..." aria-label="Поиск по названию или городу">
+      <!-- Category Dropdown Selector -->
+      <div class="map-category-control">
+        <label for="map-category-select" class="map-category-label">🏷️ Категория медицинской помощи:</label>
+        <div class="category-select-wrapper">
+          <span class="category-select-icon" aria-hidden="true">🏥</span>
+          <select id="map-category-select" class="map-category-select" aria-label="Выберите категорию медицинской помощи">
+            <option value="all" selected>🌟 Все категории (травмпункты и больницы)</option>
+            <option value="trauma">🩹 Травмпункты (переломы, вывихи, ушибы, раны)</option>
+            <option value="hospital">🏥 Больницы скорой помощи (дежурные стационары)</option>
+            <option value="24h">🌙 Круглосуточная экстренная помощь (24/7)</option>
+            <option value="child">👶 Детские травмпункты и больницы</option>
+            <option value="eye">👁️ Травмы глаз (неотложная офтальмология)</option>
+            <option value="burn">🔥 Ожоговые отделения и центры</option>
+          </select>
+          <span class="category-select-arrow" aria-hidden="true">▼</span>
+        </div>
       </div>
 
-      <div class="map-chips" role="toolbar" aria-label="Фильтры отделений">
-        <span class="map-chips-label">Показать:</span>
+      <div class="map-chips" role="toolbar" aria-label="Быстрый выбор категорий">
+        <span class="map-chips-label">Быстрый выбор:</span>
         <button type="button" class="chip active" data-category="all">🌟 Все</button>
         <button type="button" class="chip" data-category="trauma">🩹 Травмпункты</button>
         <button type="button" class="chip" data-category="hospital">🏥 Больницы</button>
+        <button type="button" class="chip" data-category="24h">🌙 24/7</button>
+        <button type="button" class="chip" data-category="child">👶 Детские</button>
       </div>
 
       <!-- Radius Selector Slider (25 - 50 - 75 - 100 км) -->
