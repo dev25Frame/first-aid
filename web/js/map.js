@@ -59,8 +59,8 @@
             noPlacemark: true,
             noCentering: true,
             noPopup: true,
-            resultsPerPage: 30,
-            useMapBounds: true,
+            resultsPerPage: 50,
+            useMapBounds: false, // ВАЖНО: false, чтобы поиск не зависел от размера и вьюпорта контейнера карты
             float: 'none',
             position: { top: '-9999px', left: '-9999px' }
           }
@@ -79,8 +79,8 @@
             noPlacemark: true,
             noCentering: true,
             noPopup: true,
-            resultsPerPage: 30,
-            useMapBounds: true,
+            resultsPerPage: 50,
+            useMapBounds: false, // ВАЖНО: false, чтобы поиск не зависел от размера и вьюпорта контейнера карты
             float: 'none',
             position: { top: '-9999px', left: '-9999px' }
           }
@@ -250,9 +250,13 @@
         return false;
       }
 
-      // 2. Фильтр по категории
-      if (currentCategory === 'trauma' && item.facilityType !== 'trauma') return false;
-      if (currentCategory === 'hospital' && item.facilityType !== 'hospital') return false;
+      // 2. Фильтр по категории («Все», «Травмпункты», «Больницы»)
+      if (currentCategory === 'trauma') {
+        if (!item.isTrauma && item.facilityType !== 'trauma') return false;
+      }
+      if (currentCategory === 'hospital') {
+        if (!item.isHospital && item.facilityType !== 'hospital') return false;
+      }
 
       // 3. Поиск по строке
       if (searchQuery) {
@@ -446,147 +450,195 @@
     }
   }
 
+  // Очистка названия населенного пункта от административных приставок
+  function cleanCityTitle(rawCity) {
+    if (!rawCity || typeof rawCity !== 'string') return '';
+    return rawCity
+      .replace(/^(городской округ|муниципальный округ|городское поселение|сельское поселение|город|поселок|село|пгт|деревня)\s+/i, '')
+      .replace(/\s+(район|область|край|республика|автономный округ)$/i, '')
+      .replace(/[0-9]/g, '')
+      .trim();
+  }
+
+  // Выполнение одного поискового запроса организаций
+  function searchSingleQuery(queryText, boundBox) {
+    return new Promise(function (resolve) {
+      // 1. Прямой асинхронный поиск через ymaps.geocode с provider: 'yandex#search'
+      if (typeof ymaps !== 'undefined' && ymaps.geocode) {
+        ymaps.geocode(queryText, {
+          provider: 'yandex#search',
+          boundedBy: boundBox,
+          strictBounds: false,
+          results: 50
+        }).then(function (res) {
+          var list = [];
+          if (res && res.geoObjects) {
+            res.geoObjects.each(function (obj) {
+              list.push(obj);
+            });
+          }
+          if (list.length > 0) {
+            resolve(list);
+            return;
+          }
+          // Резервный поиск через SearchControl
+          searchViaControl(queryText, boundBox).then(resolve);
+        }).catch(function (err) {
+          console.warn('ymaps.geocode error for "' + queryText + '":', err);
+          searchViaControl(queryText, boundBox).then(resolve);
+        });
+      } else {
+        searchViaControl(queryText, boundBox).then(resolve);
+      }
+    });
+  }
+
+  // Резервный поиск через поисковый контроллер Яндекса
+  function searchViaControl(queryText, boundBox) {
+    return new Promise(function (resolve) {
+      if (!yMap) {
+        resolve([]);
+        return;
+      }
+      initSearchControls();
+      var ctrl = (queryText.indexOf('травм') !== -1) ? traumaSearchControl : hospitalSearchControl;
+      if (!ctrl) {
+        resolve([]);
+        return;
+      }
+      try {
+        ctrl.options.set({
+          boundedBy: boundBox,
+          useMapBounds: false, // ВАЖНО: false, чтобы поиск шел строго по координатам boundBox
+          strictBounds: false,
+          resultsPerPage: 50
+        });
+        ctrl.search(queryText).then(function () {
+          var arr = ctrl.getResultsArray() || [];
+          resolve(arr);
+        }).catch(function (err) {
+          console.warn('SearchControl error for "' + queryText + '":', err);
+          resolve([]);
+        });
+      } catch (e) {
+        resolve([]);
+      }
+    });
+  }
+
   // Поиск травмпунктов и больниц через провайдер организаций Яндекса
   function performMedicalSearch(lat, lng, cityName) {
     var statusEl = document.getElementById('geo-status-badge');
-    initSearchControls();
-
-    if (!traumaSearchControl || !hospitalSearchControl) {
-      renderList();
-      return;
-    }
-
-    // Область поиска до 100 км вокруг пользователя
-    var boundBox = [[lat - 0.9, lng - 0.9], [lat + 0.9, lng + 0.9]];
-    traumaSearchControl.options.set({
-      boundedBy: boundBox,
-      useMapBounds: true,
-      strictBounds: false
-    });
-    hospitalSearchControl.options.set({
-      boundedBy: boundBox,
-      useMapBounds: true,
-      strictBounds: false
-    });
-
-    var qTrauma = (cityName ? cityName + ' ' : '') + 'травмпункт';
-    var qHospital = (cityName ? cityName + ' ' : '') + 'больница';
+    var displayCity = cleanCityTitle(cityName) || cityName || '';
 
     if (statusEl) {
-      statusEl.innerHTML = '<span class="geo-spinner" aria-hidden="true"></span> Поиск травмпунктов и больниц в ' + (cityName ? 'г. ' + cityName : 'вашем районе') + '...';
+      statusEl.innerHTML = '<span class="geo-spinner" aria-hidden="true"></span> Поиск травмпунктов и больниц' + (displayCity ? ' в районе г. ' + displayCity : ' в радиусе 100 км') + '...';
+      statusEl.classList.remove('geo-active');
     }
 
-    // Параллельный запрос к обоим профилям
-    var pTrauma = traumaSearchControl.search(qTrauma).then(function () {
-      var res = traumaSearchControl.getResultsArray();
-      if (res.length === 0 && cityName) {
-        return traumaSearchControl.search('травмпункт').then(function () {
-          return traumaSearchControl.getResultsArray();
-        });
-      }
-      return res;
-    }).catch(function () { return []; });
+    // Правильный расчет географического прямоугольника поиска до 105 км вокруг координат
+    // 1 градус широты ≈ 111.32 км; 1 градус долготы ≈ 111.32 * cos(lat)
+    var dLat = 105 / 111.32; // ~0.94 градуса широты
+    var cosLat = Math.cos(lat * Math.PI / 180);
+    var dLng = 105 / (111.32 * Math.max(Math.abs(cosLat), 0.25)); // от 1.3 до 1.8 градуса долготы
+    var boundBox = [
+      [lat - dLat, lng - dLng],
+      [lat + dLat, lng + dLng]
+    ];
 
-    var pHospital = hospitalSearchControl.search(qHospital).then(function () {
-      var res = hospitalSearchControl.getResultsArray();
-      if (res.length === 0 && cityName) {
-        return hospitalSearchControl.search('больница').then(function () {
-          return hospitalSearchControl.getResultsArray();
-        });
-      }
-      return res;
-    }).catch(function () { return []; });
+    // Формируем поисковые запросы по организациям
+    var queryList = [
+      { text: 'больница', categoryHint: 'hospital' },
+      { text: 'травмпункт', categoryHint: 'trauma' },
+      { text: 'больница скорой медицинской помощи', categoryHint: 'hospital' },
+      { text: 'травматологическое отделение', categoryHint: 'trauma' }
+    ];
 
-    Promise.all([pTrauma, pHospital]).then(function (resultsPair) {
-      processAllMedicalResults(resultsPair[0] || [], resultsPair[1] || [], lat, lng, cityName);
+    var cleanCity = cleanCityTitle(cityName);
+    if (cleanCity && cleanCity.length >= 3) {
+      queryList.push({ text: cleanCity + ' больница', categoryHint: 'hospital' });
+      queryList.push({ text: cleanCity + ' травмпункт', categoryHint: 'trauma' });
+    }
+
+    // Запускаем параллельные запросы по всем профилям
+    var promises = queryList.map(function (item) {
+      return searchSingleQuery(item.text, boundBox).then(function (res) {
+        return { categoryHint: item.categoryHint, list: res || [] };
+      });
+    });
+
+    Promise.all(promises).then(function (groupedResults) {
+      processAllMedicalResults(groupedResults, lat, lng, displayCity);
     }).catch(function (err) {
-      console.warn('Ошибка загрузки отделений:', err);
+      console.warn('Ошибка выполнения медицинского поиска:', err);
       if (statusEl) {
         statusEl.innerHTML = '📍 Не удалось загрузить отделения. Попробуйте обновить страницу.';
+        statusEl.classList.add('geo-active');
       }
       renderList();
     });
   }
 
   // Обработка результатов поиска и рендер
-  function processAllMedicalResults(rawTrauma, rawHospital, lat, lng, cityName) {
+  function processAllMedicalResults(groupedResults, lat, lng, displayCity) {
     var statusEl = document.getElementById('geo-status-badge');
     var items = [];
     var idCounter = 1000;
 
-    // 1. Обрабатываем травматологические пункты
-    rawTrauma.forEach(function (obj) {
-      var coords = obj.geometry.getCoordinates();
-      if (!coords || coords.length !== 2) return;
+    groupedResults.forEach(function (group) {
+      var categoryHint = group.categoryHint;
+      group.list.forEach(function (obj) {
+        var coords = obj.geometry && obj.geometry.getCoordinates && obj.geometry.getCoordinates();
+        if (!coords || coords.length !== 2) return;
 
-      var name = obj.properties.get('name') || 'Травматологический пункт';
-      var desc = obj.properties.get('description') || '';
-      var compMeta = obj.properties.get('CompanyMetaData') || {};
+        var name = obj.properties.get('name') || (categoryHint === 'trauma' ? 'Травматологический пункт' : 'Больница');
+        var desc = obj.properties.get('description') || '';
+        var compMeta = obj.properties.get('CompanyMetaData') || {};
 
-      var address = compMeta.address || desc || 'Адрес уточняется';
-      var phone = (compMeta.Phones && compMeta.Phones.length > 0 && compMeta.Phones[0].formatted) || '112';
-      var hoursText = (compMeta.Hours && compMeta.Hours.text) || 'Режим уточняйте по телефону';
-      var is24h = /круглосуточ|24\s*ч|24\/7/i.test(hoursText);
-      var isChild = /детск|педиатрич/i.test(name) || /детск/i.test(address);
-      var distance = calcDistanceKm(lat, lng, coords[0], coords[1]);
+        var address = compMeta.address || desc || 'Адрес уточняется';
+        var phone = (compMeta.Phones && compMeta.Phones.length > 0 && compMeta.Phones[0].formatted) || '112';
+        var hoursText = (compMeta.Hours && compMeta.Hours.text) || 'Круглосуточно (24/7)';
+        var is24h = /круглосуточ|24\s*ч|24\/7/i.test(hoursText);
+        var isChild = /детск|педиатрич/i.test(name) || /детск/i.test(address);
 
-      if (distance > 110) return;
+        var nameLower = (name + ' ' + desc).toLowerCase();
+        var isTrauma = /травм|перелом|ушиб|хирург/i.test(nameLower) || (categoryHint === 'trauma');
+        var isHospital = /больниц|госпитал|клиник|стационар|смп/i.test(nameLower) || (categoryHint === 'hospital');
 
-      items.push({
-        id: ++idCounter,
-        facilityType: 'trauma',
-        name: name,
-        type: isChild ? 'child' : 'adult',
-        is24h: is24h,
-        address: address,
-        phone: phone,
-        metro: '',
-        hours: hoursText,
-        lat: coords[0],
-        lng: coords[1],
-        desc: compMeta.url ? ('Официальный сайт: ' + compMeta.url) : 'Городской травматологический пункт.',
-        distance: distance
-      });
-    });
+        var distance = calcDistanceKm(lat, lng, coords[0], coords[1]);
 
-    // 2. Обрабатываем больницы
-    rawHospital.forEach(function (obj) {
-      var coords = obj.geometry.getCoordinates();
-      if (!coords || coords.length !== 2) return;
+        // Ограничиваем максимальную дальность выборки 120 км (для уверенного покрытия радиуса 100 км)
+        if (distance > 120) return;
 
-      var name = obj.properties.get('name') || 'Городская клиническая больница';
-      var desc = obj.properties.get('description') || '';
-      var compMeta = obj.properties.get('CompanyMetaData') || {};
+        // Дедупликация: не добавляем, если такое учреждение уже есть в радиусе 250 метров или совпадает ID
+        var isDup = items.some(function (existing) {
+          var distM = calcDistanceKm(coords[0], coords[1], existing.lat, existing.lng) * 1000;
+          if (distM < 250) return true;
+          if (compMeta.id && existing.companyId && compMeta.id === existing.companyId) return true;
+          return false;
+        });
+        if (isDup) return;
 
-      // Исключаем дубликаты, если клиника уже есть в списке (< 200м)
-      var isDup = items.some(function (existing) {
-        return calcDistanceKm(coords[0], coords[1], existing.lat, existing.lng) < 0.2;
-      });
-      if (isDup) return;
+        var facilityType = (categoryHint === 'trauma' || (isTrauma && !isHospital)) ? 'trauma' : 'hospital';
 
-      var address = compMeta.address || desc || 'Адрес уточняется';
-      var phone = (compMeta.Phones && compMeta.Phones.length > 0 && compMeta.Phones[0].formatted) || '112';
-      var hoursText = (compMeta.Hours && compMeta.Hours.text) || 'Круглосуточно (24/7)';
-      var is24h = /круглосуточ|24\s*ч|24\/7/i.test(hoursText) || true;
-      var isChild = /детск|педиатрич/i.test(name) || /детск/i.test(address);
-      var distance = calcDistanceKm(lat, lng, coords[0], coords[1]);
-
-      if (distance > 110) return;
-
-      items.push({
-        id: ++idCounter,
-        facilityType: 'hospital',
-        name: name,
-        type: isChild ? 'child' : 'adult',
-        is24h: is24h,
-        address: address,
-        phone: phone,
-        metro: '',
-        hours: hoursText,
-        lat: coords[0],
-        lng: coords[1],
-        desc: compMeta.url ? ('Официальный сайт: ' + compMeta.url) : 'Городская клиническая больница. Экстренное приёмное отделение.',
-        distance: distance
+        items.push({
+          id: ++idCounter,
+          companyId: compMeta.id || '',
+          facilityType: facilityType,
+          isTrauma: isTrauma,
+          isHospital: isHospital,
+          name: name,
+          type: isChild ? 'child' : 'adult',
+          is24h: is24h,
+          address: address,
+          phone: phone,
+          metro: '',
+          hours: hoursText,
+          lat: coords[0],
+          lng: coords[1],
+          desc: compMeta.url ? ('Официальный сайт: ' + compMeta.url) : (facilityType === 'hospital' ? 'Городская клиническая больница. Экстренное приёмное отделение.' : 'Городской травматологический пункт.'),
+          distance: distance
+        });
       });
     });
 
@@ -597,12 +649,12 @@
 
     if (centersData.length > 0) {
       if (statusEl) {
-        statusEl.innerHTML = '📍 ' + (cityName ? cityName + ': ' : '') + 'найдено учреждений: ' + visibleFiltered.length + ' (в радиусе ' + currentRadius + ' км)';
+        statusEl.innerHTML = '📍 ' + (displayCity ? displayCity + ': ' : '') + 'найдено учреждений: ' + visibleFiltered.length + ' (в радиусе ' + currentRadius + ' км)';
         statusEl.classList.add('geo-active');
       }
     } else {
       if (statusEl) {
-        statusEl.innerHTML = '📍 ' + (cityName ? cityName + ': ' : '') + 'отделения поблизости не найдены в онлайн-справочнике. При экстренных случаях звоните 112.';
+        statusEl.innerHTML = '📍 ' + (displayCity ? displayCity + ': ' : '') + 'в радиусе ' + currentRadius + ' км отделения не найдены в онлайн-справочнике. При экстренных случаях звоните 112.';
         statusEl.classList.add('geo-active');
       }
     }
@@ -705,7 +757,8 @@
         var statusEl = document.getElementById('geo-status-badge');
         if (statusEl && userCoords) {
           var filtered = getFilteredCenters();
-          statusEl.innerHTML = '📍 ' + (currentCity ? currentCity + ': ' : '') + 'найдено учреждений: ' + filtered.length + ' (в радиусе ' + currentRadius + ' км)';
+          var displayCity = cleanCityTitle(currentCity) || currentCity || '';
+          statusEl.innerHTML = '📍 ' + (displayCity ? displayCity + ': ' : '') + 'найдено учреждений: ' + filtered.length + ' (в радиусе ' + currentRadius + ' км)';
         }
 
         renderList();
@@ -740,7 +793,8 @@
       var statusEl = document.getElementById('geo-status-badge');
       if (statusEl && userCoords) {
         var visible = getFilteredCenters();
-        statusEl.innerHTML = '📍 ' + (currentCity ? currentCity + ': ' : '') + 'найдено учреждений: ' + visible.length + ' (в радиусе ' + currentRadius + ' км)';
+        var displayCity = cleanCityTitle(currentCity) || currentCity || '';
+        statusEl.innerHTML = '📍 ' + (displayCity ? displayCity + ': ' : '') + 'найдено учреждений: ' + visible.length + ' (в радиусе ' + currentRadius + ' км)';
       }
 
       renderList();
@@ -821,6 +875,17 @@
     var mapCol = document.getElementById('map-view-col');
 
     if (tabListBtn && tabMapBtn && listCol && mapCol) {
+      // Начальное состояние для мобильных экранов: если активен таб списка, скрываем карту
+      if (window.innerWidth <= 768) {
+        if (tabListBtn.classList.contains('active')) {
+          mapCol.classList.add('hidden-mobile');
+          listCol.classList.remove('hidden-mobile');
+        } else if (tabMapBtn.classList.contains('active')) {
+          listCol.classList.add('hidden-mobile');
+          mapCol.classList.remove('hidden-mobile');
+        }
+      }
+
       tabListBtn.addEventListener('click', function () {
         tabListBtn.classList.add('active');
         tabMapBtn.classList.remove('active');
@@ -834,7 +899,12 @@
         mapCol.classList.remove('hidden-mobile');
         listCol.classList.add('hidden-mobile');
         if (yMap) {
-          setTimeout(function () { yMap.container.fitToViewport(); }, 150);
+          setTimeout(function () {
+            yMap.container.fitToViewport();
+            if (radiusCircle) {
+              yMap.setBounds(radiusCircle.geometry.getBounds(), { checkZoomRange: true, zoomMargin: 35 });
+            }
+          }, 150);
         }
       });
     }
