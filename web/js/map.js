@@ -14,8 +14,6 @@
   var userPlacemark = null;
   var radiusCircle = null;
   var medicalCollection = null;
-  var traumaSearchControl = null;
-  var hospitalSearchControl = null;
 
   var centersData = []; // Динамические данные из API Яндекс.Карт
   var userCoords = null; // { lat, lng }
@@ -67,51 +65,6 @@
     return item.is24h ? 'islands#redMedicalIcon' : 'islands#orangeMedicalIcon';
   }
 
-  // Инициализация поисковых контроллеров по организациям
-  function initSearchControls() {
-    if (!yMap) return;
-
-    if (!traumaSearchControl) {
-      try {
-        traumaSearchControl = new ymaps.control.SearchControl({
-          options: {
-            provider: 'yandex#search',
-            noPlacemark: true,
-            noCentering: true,
-            noPopup: true,
-            resultsPerPage: 50,
-            useMapBounds: false, // ВАЖНО: false, чтобы поиск не зависел от размера и вьюпорта контейнера карты
-            float: 'none',
-            position: { top: '-9999px', left: '-9999px' }
-          }
-        });
-        yMap.controls.add(traumaSearchControl);
-      } catch (e) {
-        console.warn('Не удалось инициализировать traumaSearchControl:', e);
-      }
-    }
-
-    if (!hospitalSearchControl) {
-      try {
-        hospitalSearchControl = new ymaps.control.SearchControl({
-          options: {
-            provider: 'yandex#search',
-            noPlacemark: true,
-            noCentering: true,
-            noPopup: true,
-            resultsPerPage: 50,
-            useMapBounds: false, // ВАЖНО: false, чтобы поиск не зависел от размера и вьюпорта контейнера карты
-            float: 'none',
-            position: { top: '-9999px', left: '-9999px' }
-          }
-        });
-        yMap.controls.add(hospitalSearchControl);
-      } catch (e) {
-        console.warn('Не удалось инициализировать hospitalSearchControl:', e);
-      }
-    }
-  }
-
   // Инициализация карты Яндекс
   function initYandexMap() {
     var mapContainer = document.getElementById('trauma-map');
@@ -140,8 +93,6 @@
 
         medicalCollection = new ymaps.GeoObjectCollection();
         yMap.geoObjects.add(medicalCollection);
-
-        initSearchControls();
 
         // Слушатель стандартной кнопки геолокации в контролах карты
         var geoControl = yMap.controls.get('geolocationControl');
@@ -488,10 +439,9 @@
   // Выполнение одного поискового запроса организаций
   function searchSingleQuery(queryText, boundBox) {
     return new Promise(function (resolve) {
-      // 1. Прямой асинхронный поиск через ymaps.geocode с provider: 'yandex#search'
-      if (typeof ymaps !== 'undefined' && ymaps.geocode) {
-        ymaps.geocode(queryText, {
-          provider: 'yandex#search',
+      // 1. Официальный поиск по организациям через модуль ymaps.search (yandex#search)
+      if (typeof ymaps !== 'undefined' && typeof ymaps.search === 'function') {
+        ymaps.search(queryText, {
           boundedBy: boundBox,
           strictBounds: false,
           results: 50
@@ -506,10 +456,10 @@
             resolve(list);
             return;
           }
-          // Резервный поиск через SearchControl
+          // Если поиск по организациям не дал результатов, пробуем SearchControl
           searchViaControl(queryText, boundBox).then(resolve);
         }).catch(function (err) {
-          console.warn('ymaps.geocode error for "' + queryText + '":', err);
+          console.warn('ymaps.search error for "' + queryText + '":', err);
           searchViaControl(queryText, boundBox).then(resolve);
         });
       } else {
@@ -518,36 +468,66 @@
     });
   }
 
-  // Резервный поиск через поисковый контроллер Яндекса
+  // Резервный поиск через изолированный поисковый контроллер Яндекса
   function searchViaControl(queryText, boundBox) {
     return new Promise(function (resolve) {
-      if (!yMap) {
-        resolve([]);
-        return;
-      }
-      initSearchControls();
-      var ctrl = (queryText.indexOf('травм') !== -1) ? traumaSearchControl : hospitalSearchControl;
-      if (!ctrl) {
-        resolve([]);
+      if (typeof ymaps === 'undefined' || !ymaps.control || !ymaps.control.SearchControl) {
+        fallbackGeocodeSearch(queryText, boundBox).then(resolve);
         return;
       }
       try {
-        ctrl.options.set({
-          boundedBy: boundBox,
-          useMapBounds: false, // ВАЖНО: false, чтобы поиск шел строго по координатам boundBox
-          strictBounds: false,
-          resultsPerPage: 50
+        var ctrl = new ymaps.control.SearchControl({
+          options: {
+            provider: 'yandex#search',
+            noPlacemark: true,
+            noCentering: true,
+            noPopup: true,
+            resultsPerPage: 50,
+            useMapBounds: false,
+            boundedBy: boundBox,
+            strictBounds: false,
+            float: 'none'
+          }
         });
         ctrl.search(queryText).then(function () {
           var arr = ctrl.getResultsArray() || [];
-          resolve(arr);
+          if (arr.length > 0) {
+            resolve(arr);
+          } else {
+            fallbackGeocodeSearch(queryText, boundBox).then(resolve);
+          }
         }).catch(function (err) {
           console.warn('SearchControl error for "' + queryText + '":', err);
-          resolve([]);
+          fallbackGeocodeSearch(queryText, boundBox).then(resolve);
         });
       } catch (e) {
-        resolve([]);
+        fallbackGeocodeSearch(queryText, boundBox).then(resolve);
       }
+    });
+  }
+
+  // Резервный 3-й уровень: поиск медицинского учреждения как топонима через геокодер API
+  function fallbackGeocodeSearch(queryText, boundBox) {
+    return new Promise(function (resolve) {
+      if (typeof ymaps === 'undefined' || typeof ymaps.geocode !== 'function') {
+        resolve([]);
+        return;
+      }
+      ymaps.geocode(queryText, {
+        boundedBy: boundBox,
+        strictBounds: false,
+        results: 30
+      }).then(function (geoRes) {
+        var geoList = [];
+        if (geoRes && geoRes.geoObjects) {
+          geoRes.geoObjects.each(function (obj) {
+            geoList.push(obj);
+          });
+        }
+        resolve(geoList);
+      }).catch(function () {
+        resolve([]);
+      });
     });
   }
 
