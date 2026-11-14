@@ -13,6 +13,7 @@
   var placemarksMap = {};
   var userPlacemark = null;
   var radiusCircle = null;
+  var medicalCollection = null;
   var traumaSearchControl = null;
   var hospitalSearchControl = null;
 
@@ -20,8 +21,8 @@
   var userCoords = null; // { lat, lng }
   var currentCity = '';
   var currentCategory = 'all'; // 'all', 'trauma', 'hospital'
-  var searchQuery = '';
   var currentRadius = 50; // По умолчанию 50 км
+  var idCounter = 1000; // Глобальный счетчик ID для уникальности между вызовами
 
   // Формула гаверсинусов (Haversine formula) для точного расчета дистанции в км
   function calcDistanceKm(lat1, lon1, lat2, lon2) {
@@ -137,6 +138,9 @@
           searchControlProvider: 'yandex#search'
         });
 
+        medicalCollection = new ymaps.GeoObjectCollection();
+        yMap.geoObjects.add(medicalCollection);
+
         initSearchControls();
 
         // Слушатель стандартной кнопки геолокации в контролах карты
@@ -172,36 +176,29 @@
     if (!yMap || !userCoords) return;
 
     if (radiusCircle) {
-      yMap.geoObjects.remove(radiusCircle);
+      radiusCircle.geometry.setCoordinates([userCoords.lat, userCoords.lng]);
+      radiusCircle.geometry.setRadius(currentRadius * 1000);
+      radiusCircle.properties.set('hintContent', 'Радиус поиска: ' + currentRadius + ' км');
+    } else {
+      radiusCircle = new ymaps.Circle([[userCoords.lat, userCoords.lng], currentRadius * 1000], {
+        hintContent: 'Радиус поиска: ' + currentRadius + ' км'
+      }, {
+        fillColor: 'rgba(71, 118, 133, 0.08)',
+        strokeColor: 'rgba(71, 118, 133, 0.5)',
+        strokeWidth: 2,
+        strokeStyle: 'shortdash'
+      });
+      yMap.geoObjects.add(radiusCircle);
     }
-
-    radiusCircle = new ymaps.Circle([[userCoords.lat, userCoords.lng], currentRadius * 1000], {
-      hintContent: 'Радиус поиска: ' + currentRadius + ' км'
-    }, {
-      fillColor: 'rgba(71, 118, 133, 0.08)',
-      strokeColor: 'rgba(71, 118, 133, 0.5)',
-      strokeWidth: 2,
-      strokeStyle: 'shortdash'
-    });
-
-    yMap.geoObjects.add(radiusCircle);
   }
 
   // Отрисовка маркеров на карте Яндекса
   function renderMarkers() {
-    if (!yMap) return;
+    if (!yMap || !medicalCollection) return;
 
-    // Очистить существующие метки
-    yMap.geoObjects.removeAll();
+    // Очистить только существующие метки учреждений, не удаляя круг радиуса и позицию пользователя
+    medicalCollection.removeAll();
     placemarksMap = {};
-
-    // Восстанавливаем круг радиуса и метку пользователя
-    if (radiusCircle) {
-      yMap.geoObjects.add(radiusCircle);
-    }
-    if (userPlacemark) {
-      yMap.geoObjects.add(userPlacemark);
-    }
 
     var filtered = getFilteredCenters();
 
@@ -244,7 +241,7 @@
         highlightCard(item.id);
       });
 
-      yMap.geoObjects.add(placemark);
+      medicalCollection.add(placemark);
       placemarksMap[item.id] = placemark;
     });
 
@@ -253,8 +250,8 @@
         checkZoomRange: true,
         zoomMargin: 35
       });
-    } else if (filtered.length > 0) {
-      yMap.setBounds(yMap.geoObjects.getBounds(), {
+    } else if (filtered.length > 0 && medicalCollection.getBounds()) {
+      yMap.setBounds(medicalCollection.getBounds(), {
         checkZoomRange: true,
         zoomMargin: 40
       });
@@ -285,15 +282,6 @@
       } else if (currentCategory === 'burn') {
         var isBurn = /ожог|комбустиол/i.test(item.name + ' ' + item.desc);
         if (!isBurn) return false;
-      }
-
-      // 3. Поиск по строке (если задана)
-      if (searchQuery) {
-        var q = searchQuery.toLowerCase();
-        var matchName = item.name.toLowerCase().indexOf(q) !== -1;
-        var matchAddr = item.address.toLowerCase().indexOf(q) !== -1;
-        var matchMetro = item.metro && item.metro.toLowerCase().indexOf(q) !== -1;
-        if (!matchName && !matchAddr && !matchMetro) return false;
       }
 
       return true;
@@ -405,7 +393,7 @@
 
     // Если на мобильном экране открыта вкладка списка, переключаем на карту
     var mapTabBtn = document.getElementById('tab-show-map');
-    if (window.innerWidth <= 860 && mapTabBtn) {
+    if (window.innerWidth <= 680 && mapTabBtn) {
       mapTabBtn.click();
     }
   }
@@ -432,22 +420,23 @@
       statusEl.classList.add('geo-active');
     }
 
-    // Добавление метки пользователя на карту
+    // Добавление / обновление метки пользователя на карте
     if (yMap) {
-      if (userPlacemark) {
-        yMap.geoObjects.remove(userPlacemark);
+      if (!userPlacemark) {
+        userPlacemark = new ymaps.Placemark([userCoords.lat, userCoords.lng], {
+          balloonContentHeader: '<strong>Ваше местоположение</strong>',
+          balloonContentBody: '<p>Координаты: ' + userCoords.lat.toFixed(4) + ', ' + userCoords.lng.toFixed(4) + '</p>',
+          hintContent: 'Вы находитесь здесь'
+        }, {
+          preset: 'islands#blueCircleDotIconWithCaption',
+          iconCaption: 'Вы здесь'
+        });
+        yMap.geoObjects.add(userPlacemark);
+      } else {
+        userPlacemark.geometry.setCoordinates([userCoords.lat, userCoords.lng]);
+        userPlacemark.properties.set('balloonContentBody', '<p>Координаты: ' + userCoords.lat.toFixed(4) + ', ' + userCoords.lng.toFixed(4) + '</p>');
       }
 
-      userPlacemark = new ymaps.Placemark([userCoords.lat, userCoords.lng], {
-        balloonContentHeader: '<strong>Ваше местоположение</strong>',
-        balloonContentBody: '<p>Координаты: ' + userCoords.lat.toFixed(4) + ', ' + userCoords.lng.toFixed(4) + '</p>',
-        hintContent: 'Вы находитесь здесь'
-      }, {
-        preset: 'islands#blueCircleDotIconWithCaption',
-        iconCaption: 'Вы здесь'
-      });
-
-      yMap.geoObjects.add(userPlacemark);
       yMap.setCenter([userCoords.lat, userCoords.lng], 11, { checkZoomRange: true });
     }
 
@@ -585,7 +574,7 @@
     searchSingleQuery(queryText, boundBox).then(function (results) {
       if (results && results.length > 0) {
         var group = [{ categoryHint: category === 'eye' ? 'trauma' : 'hospital', list: results }];
-        processAllMedicalResults(group, userCoords.lat, userCoords.lng, currentCity);
+        processAllMedicalResults(group, userCoords.lat, userCoords.lng, currentCity, true);
       } else {
         updateStatusCount();
         renderList();
@@ -640,7 +629,7 @@
     });
 
     Promise.all(promises).then(function (groupedResults) {
-      processAllMedicalResults(groupedResults, lat, lng, displayCity);
+      processAllMedicalResults(groupedResults, lat, lng, displayCity, false);
     }).catch(function (err) {
       console.warn('Ошибка выполнения медицинского поиска:', err);
       if (statusEl) {
@@ -652,10 +641,8 @@
   }
 
   // Обработка результатов поиска и рендер
-  function processAllMedicalResults(groupedResults, lat, lng, displayCity) {
-    var statusEl = document.getElementById('geo-status-badge');
-    var items = [];
-    var idCounter = 1000;
+  function processAllMedicalResults(groupedResults, lat, lng, displayCity, isAppend) {
+    var items = isAppend ? centersData.slice() : [];
 
     groupedResults.forEach(function (group) {
       var categoryHint = group.categoryHint;
@@ -717,20 +704,7 @@
     centersData = items;
     centersData.sort(function (a, b) { return a.distance - b.distance; });
 
-    var visibleFiltered = getFilteredCenters();
-
-    if (centersData.length > 0) {
-      if (statusEl) {
-        statusEl.innerHTML = '📍 ' + (displayCity ? displayCity + ': ' : '') + 'найдено учреждений: ' + visibleFiltered.length + ' (в радиусе ' + currentRadius + ' км)';
-        statusEl.classList.add('geo-active');
-      }
-    } else {
-      if (statusEl) {
-        statusEl.innerHTML = '📍 ' + (displayCity ? displayCity + ': ' : '') + 'в радиусе ' + currentRadius + ' км отделения не найдены в онлайн-справочнике. При экстренных случаях звоните 112.';
-        statusEl.classList.add('geo-active');
-      }
-    }
-
+    updateStatusCount();
     renderList();
     renderMarkers();
   }
@@ -815,21 +789,27 @@
     );
   }
 
+  // Функция обновления статусной строки
+  function updateStatusCount() {
+    var statusEl = document.getElementById('geo-status-badge');
+    if (statusEl && userCoords) {
+      var visible = getFilteredCenters();
+      var displayCity = cleanCityTitle(currentCity) || currentCity || '';
+      var catTitle = getCategoryTitle(currentCategory);
+      if (visible.length > 0) {
+        statusEl.innerHTML = '📍 ' + (displayCity ? displayCity + ': ' : '') + 'найдено (' + catTitle + '): ' + visible.length + ' (в радиусе ' + currentRadius + ' км)';
+        statusEl.classList.add('geo-active');
+      } else {
+        statusEl.innerHTML = '📍 ' + (displayCity ? displayCity + ': ' : '') + 'в радиусе ' + currentRadius + ' км отделения («' + catTitle + '») не найдены.';
+        statusEl.classList.add('geo-active');
+      }
+    }
+  }
+
   // Настройка фильтров, выбора категории, радиуса и кнопок
   function setupControls() {
     var categorySelect = document.getElementById('map-category-select');
     var chips = document.querySelectorAll('.map-chips .chip');
-
-    // Функция обновления статусной строки
-    function updateStatusCount() {
-      var statusEl = document.getElementById('geo-status-badge');
-      if (statusEl && userCoords) {
-        var visible = getFilteredCenters();
-        var displayCity = cleanCityTitle(currentCity) || currentCity || '';
-        var catTitle = getCategoryTitle(currentCategory);
-        statusEl.innerHTML = '📍 ' + (displayCity ? displayCity + ': ' : '') + 'найдено (' + catTitle + '): ' + visible.length + ' (в радиусе ' + currentRadius + ' км)';
-      }
-    }
 
     // Обработка смены категории
     function setCategory(cat) {
@@ -932,27 +912,46 @@
     var mapCol = document.getElementById('map-view-col');
 
     if (tabListBtn && tabMapBtn && listCol && mapCol) {
-      // Начальное состояние для мобильных экранов: если активен таб списка, скрываем карту
-      if (window.innerWidth <= 768) {
-        if (tabListBtn.classList.contains('active')) {
-          mapCol.classList.add('hidden-mobile');
+      function syncMobileTabVisibility() {
+        if (window.innerWidth <= 680) {
+          if (tabListBtn.classList.contains('active')) {
+            mapCol.classList.add('hidden-mobile');
+            listCol.classList.remove('hidden-mobile');
+          } else {
+            listCol.classList.add('hidden-mobile');
+            mapCol.classList.remove('hidden-mobile');
+          }
+        } else {
           listCol.classList.remove('hidden-mobile');
-        } else if (tabMapBtn.classList.contains('active')) {
-          listCol.classList.add('hidden-mobile');
           mapCol.classList.remove('hidden-mobile');
         }
       }
 
+      // Начальное состояние для мобильных экранов
+      syncMobileTabVisibility();
+
+      // Автоматическая адаптация при изменении размера экрана
+      window.addEventListener('resize', function () {
+        syncMobileTabVisibility();
+        if (yMap) {
+          yMap.container.fitToViewport();
+        }
+      });
+
       tabListBtn.addEventListener('click', function () {
         tabListBtn.classList.add('active');
+        tabListBtn.setAttribute('aria-selected', 'true');
         tabMapBtn.classList.remove('active');
+        tabMapBtn.setAttribute('aria-selected', 'false');
         listCol.classList.remove('hidden-mobile');
         mapCol.classList.add('hidden-mobile');
       });
 
       tabMapBtn.addEventListener('click', function () {
         tabMapBtn.classList.add('active');
+        tabMapBtn.setAttribute('aria-selected', 'true');
         tabListBtn.classList.remove('active');
+        tabListBtn.setAttribute('aria-selected', 'false');
         mapCol.classList.remove('hidden-mobile');
         listCol.classList.add('hidden-mobile');
         if (yMap) {
