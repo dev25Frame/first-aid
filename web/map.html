@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Травмпункты рядом • Первая помощь</title>
-  <meta name="description" content="Поиск ближайших дежурных и детских травматологических пунктов с адресами, телефонами и расчетом расстояния.">
+  <title>Травмпункты и больницы рядом • Первая помощь</title>
+  <meta name="description" content="Интерактивный поиск дежурных травмпунктов и больниц скорой помощи на базе OpenStreetMap (Leaflet.js) с динамической загрузкой отделений.">
   
-  <!-- Yandex Maps JS API v2.1 -->
-  <script src="https://api-maps.yandex.ru/2.1/?apikey=0898ed33-21d0-4e96-8e43-dc2c5466d146&amp;lang=ru_RU"></script>
-  <link rel="stylesheet" href="css/style.css?v=2.2.0">
+  <!-- Leaflet.js CSS (OpenStreetMap Engine) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="stylesheet" href="css/style.css?v=3.1.0">
   
   <script>
     (function(){
@@ -47,24 +47,148 @@
   <main class="map-page-wrapper">
     <div class="map-header">
       <h1>Травмпункты и больницы</h1>
-      <p>Быстрый поиск дежурных травматологических отделений и больниц с телефонами и навигацией.</p>
-      <div class="geo-status-wrapper">
+      <p>Быстрый поиск дежурных травмпунктов и больниц на базе <strong>OpenStreetMap</strong> с динамической загрузкой отделений и GPS-навигацией.</p>
+
+      <div class="geo-status-wrapper" style="margin-top:1.25rem;">
         <div id="geo-status-badge" class="geo-status-badge" role="status" aria-live="polite">
-          <span class="geo-spinner" aria-hidden="true"></span> Определение ближайших отделений...
+          <span class="geo-spinner" aria-hidden="true"></span> Определение ближайших отделений через GPS...
         </div>
-        <button type="button" id="btn-re-geo" class="btn-re-geo" title="Определить моё местоположение заново" aria-label="Определить местоположение заново">
-          🔄 Определить снова
-        </button>
+        <div class="geo-actions-group">
+          <button type="button" id="btn-re-geo" class="btn-re-geo" title="Определить моё местоположение заново" aria-label="Определить местоположение заново">
+            🔄 Мой GPS
+          </button>
+          <button type="button" id="btn-osm-sync" class="btn-osm-sync" title="Обновить и загрузить свежие отделения из базы OpenStreetMap" aria-label="Загрузить из базы OSM">
+            🌿 Загрузить из базы OSM
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Fallback Notice for Network/Offline issues -->
-    <div id="map-fallback-alert" style="display:none;" class="cert-locked-notice">
-      ℹ️ Интерактивная карта работает в автономном режиме. Список отделений с телефонами и адресами полностью доступен ниже.
-    </div>
-
-    <!-- Controls Bar: Category Dropdown & Radius Slider -->
+    <!-- Controls Bar: City Selector, Category Dropdown & Radius Slider -->
     <div class="map-controls-bar">
+      <!-- City / Region Selector -->
+      <div class="map-city-control">
+        <label for="map-city-select" class="map-city-label">📍 Город / Регион РФ:</label>
+        <div class="city-select-wrapper">
+          <span class="city-select-icon" aria-hidden="true">🗺️</span>
+          <select id="map-city-select" class="map-city-select" aria-label="Выберите город или регион РФ">
+            <option value="auto" selected>🌟 Текущее местоположение (GPS / авто)</option>
+
+            <optgroup label="🏛️ Центральный ФО (ЦФО)">
+              <option value="msk">🏙️ Москва и Московская область</option>
+              <option value="bel">Белгородская область (Белгород, Старый Оскол)</option>
+              <option value="brn">Брянская область (Брянск, Клинцы)</option>
+              <option value="vld">Владимирская область (Владимир, Ковров, Муром)</option>
+              <option value="vrn">🌾 Воронеж и Воронежская область</option>
+              <option value="ivn">Ивановская область (Иваново, Кинешма)</option>
+              <option value="klg">Калужская область (Калуга, Обнинск)</option>
+              <option value="kst">Костромская область (Кострома, Шарья)</option>
+              <option value="kursk">Курская область (Курск, Железногорск)</option>
+              <option value="lpz">Липецкая область (Липецк, Елец)</option>
+              <option value="orl">Орловская область (Орёл, Ливны)</option>
+              <option value="rzn">Рязанская область (Рязань, Касимов)</option>
+              <option value="sml">Смоленская область (Смоленск, Вязьма)</option>
+              <option value="tmb">Тамбовская область (Тамбов, Мичуринск)</option>
+              <option value="tvr">Тверская область (Тверь, Ржев)</option>
+              <option value="tula">Тульская область (Тула, Новомосковск)</option>
+              <option value="yar">Ярославская область (Ярославль, Рыбинск)</option>
+            </optgroup>
+
+            <optgroup label="🌊 Северо-Западный ФО (СЗФО)">
+              <option value="spb">🏛️ Санкт-Петербург и Ленинградская область</option>
+              <option value="arh">Архангельская область (Архангельск, Северодвинск)</option>
+              <option value="vlgd">Вологодская область (Вологда, Череповец)</option>
+              <option value="kln">Калининградская область (Калининград)</option>
+              <option value="ptz">Республика Карелия (Петрозаводск, Костомукша)</option>
+              <option value="kmi">Республика Коми (Сыктывкар, Ухта, Воркута)</option>
+              <option value="mur">Мурманская область (Мурманск, Апатиты)</option>
+              <option value="nvg">Новгородская область (Великий Новгород)</option>
+              <option value="psk">Псковская область (Псков, Великие Луки)</option>
+              <option value="nao">Ненецкий АО (Нарьян-Мар)</option>
+            </optgroup>
+
+            <optgroup label="☀️ Южный ФО и Новые регионы">
+              <option value="krd">☀️ Краснодар и Краснодарский край (Сочи, Новороссийск)</option>
+              <option value="rnd">⚓ Ростов-на-Дону и Ростовская область (Таганрог, Шахты)</option>
+              <option value="vlg">⚔️ Волгоград и Волгоградская область (Волжский)</option>
+              <option value="ast">Астраханская область (Астрахань, Ахтубинск)</option>
+              <option value="adg">Республика Адыгея (Майкоп)</option>
+              <option value="klm">Республика Калмыкия (Элиста)</option>
+              <option value="krm">Республика Крым (Симферополь, Керчь, Ялта)</option>
+              <option value="sev">Город федерального значения Севастополь</option>
+              <option value="dnr">🔴 ДНР (Донецк, Макеевка, Горловка, Мариуполь)</option>
+              <option value="lnr">🔵 ЛНР (Луганск, Алчевск, Северодонецк)</option>
+              <option value="zap">Запорожская область (Мелитополь, Бердянск)</option>
+              <option value="her">Херсонская область (Геническ, Скадовск)</option>
+            </optgroup>
+
+            <optgroup label="⛰️ Северо-Кавказский ФО (СКФО)">
+              <option value="stv">Ставропольский край (Ставрополь, Пятигорск, КМВ)</option>
+              <option value="dag">Республика Дагестан (Махачкала, Дербент, Хасавюрт)</option>
+              <option value="chn">Чеченская Республика (Грозный, Гудермес)</option>
+              <option value="kbr">Кабардино-Балкарская Республика (Нальчик)</option>
+              <option value="ala">Северная Осетия — Алания (Владикавказ, Моздок)</option>
+              <option value="kch">Карачаево-Черкесская Республика (Черкесск)</option>
+              <option value="ing">Республика Ингушетия (Магас, Назрань)</option>
+            </optgroup>
+
+            <optgroup label="🌲 Приволжский ФО (ПФО)">
+              <option value="nn">🌊 Нижний Новгород и Нижегородская область</option>
+              <option value="kzn">🕌 Казань и Республика Татарстан (Набережные Челны)</option>
+              <option value="ufa">🍯 Уфа и Республика Башкортостан (Стерлитамак)</option>
+              <option value="sam">🚀 Самара и Самарская область (Тольятти, Сызрань)</option>
+              <option value="prm">🐻 Пермь и Пермский край (Березники)</option>
+              <option value="sar">🌉 Саратов и Саратовская область (Энгельс, Балаково)</option>
+              <option value="orb">Оренбургская область (Оренбург, Орск)</option>
+              <option value="udm">Удмуртская Республика (Ижевск, Сарапул)</option>
+              <option value="pnz">Пензенская область (Пенза, Кузнецк)</option>
+              <option value="uln">Ульяновская область (Ульяновск, Димитровград)</option>
+              <option value="krv">Кировская область (Киров, Кирово-Чепецк)</option>
+              <option value="chv">Чувашская Республика (Чебоксары, Новочебоксарск)</option>
+              <option value="mrd">Республика Мордовия (Саранск, Рузаевка)</option>
+              <option value="mrl">Республика Марий Эл (Йошкар-Ола, Волжск)</option>
+            </optgroup>
+
+            <optgroup label="⛏️ Уральский ФО (УФО)">
+              <option value="ekb">⛏️ Екатеринбург и Свердловская область (Нижний Тагил)</option>
+              <option value="chel">🏭 Челябинск и Челябинская область (Магнитогорск)</option>
+              <option value="tmn">🛢️ Тюмень и Тюменская область (Тобольск)</option>
+              <option value="hmao">ХМАО — Югра (Сургут, Нижневартовск, Ханты-Мансийск)</option>
+              <option value="yanao">ЯНАО (Новый Уренгой, Ноябрьск, Салехард)</option>
+              <option value="krg">Курганская область (Курган, Шадринск)</option>
+            </optgroup>
+
+            <optgroup label="❄️ Сибирский ФО (СФО)">
+              <option value="nsk">🌲 Новосибирск и Новосибирская область</option>
+              <option value="krsk">⛰️ Красноярск и Красноярский край (Норильск, Ачинск)</option>
+              <option value="omsk">🦅 Омск и Омская область (Тара)</option>
+              <option value="kem">Кемеровская область — Кузбасс (Кемерово, Новокузнецк)</option>
+              <option value="irk">Иркутская область (Иркутск, Братск, Ангарск)</option>
+              <option value="tom">Томская область (Томск, Северск)</option>
+              <option value="alt">Алтайский край (Барнаул, Бийск, Рубцовск)</option>
+              <option value="hak">Республика Хакасия (Абакан, Саяногорск)</option>
+              <option value="tyv">Республика Тыва (Кызыл)</option>
+              <option value="ralt">Республика Алтай (Горно-Алтайск)</option>
+            </optgroup>
+
+            <optgroup label="🌅 Дальневосточный ФО (ДФО)">
+              <option value="vlv">Приморский край (Владивосток, Уссурийск, Находка)</option>
+              <option value="khb">Хабаровский край (Хабаровск, Комсомольск-на-Амуре)</option>
+              <option value="ykt">Республика Саха (Якутия) (Якутск, Нерюнгри, Мирный)</option>
+              <option value="bur">Республика Бурятия (Улан-Удэ, Северобайкальск)</option>
+              <option value="zbk">Забайкальский край (Чита, Краснокаменск)</option>
+              <option value="amr">Амурская область (Благовещенск, Тында)</option>
+              <option value="sah">Сахалинская область (Южно-Сахалинск, Корсаков)</option>
+              <option value="kam">Камчатский край (Петропавловск-Камчатский, Елизово)</option>
+              <option value="mgd">Магаданская область (Магадан)</option>
+              <option value="eao">Еврейская АО (Биробиджан)</option>
+              <option value="chk">Чукотский АО (Анадырь)</option>
+            </optgroup>
+          </select>
+          <span class="city-select-arrow" aria-hidden="true">▼</span>
+        </div>
+      </div>
+
       <!-- Category Dropdown Selector -->
       <div class="map-category-control">
         <label for="map-category-select" class="map-category-label">🏷️ Категория медицинской помощи:</label>
@@ -90,17 +214,21 @@
         <button type="button" class="chip" data-category="hospital">🏥 Больницы</button>
         <button type="button" class="chip" data-category="24h">🌙 24/7</button>
         <button type="button" class="chip" data-category="child">👶 Детские</button>
+        <button type="button" class="chip" data-category="eye">👁️ Глазные</button>
+        <button type="button" class="chip" data-category="burn">🔥 Ожоговые</button>
       </div>
 
-      <!-- Radius Selector Slider (25 - 50 - 75 - 100 км) -->
+      <!-- Radius Slider Control -->
       <div class="map-radius-control" role="group" aria-label="Радиус поиска отделений">
         <div class="radius-header">
-          <span class="radius-label">🎯 Радиус поиска:</span>
+          <label for="radius-slider" class="radius-label">
+            🎯 Радиус поиска:
+          </label>
           <span id="radius-val-badge" class="radius-val-badge">50 км</span>
         </div>
         <div class="radius-slider-wrapper">
           <input type="range" id="radius-slider" min="25" max="100" step="25" value="50" aria-label="Радиус поиска в километрах">
-          <div class="radius-ticks" aria-hidden="true">
+          <div class="radius-ticks">
             <span class="tick" data-val="25">25 км</span>
             <span class="tick active" data-val="50">50 км</span>
             <span class="tick" data-val="75">75 км</span>
@@ -110,18 +238,18 @@
       </div>
     </div>
 
-    <!-- Mobile Tabs (List / Map) -->
+    <!-- Mobile Screen Tabs (Visible only on width <= 680px) -->
     <div class="map-mobile-tabs" role="tablist" aria-label="Переключение вида">
       <button type="button" id="tab-show-list" class="map-tab-btn active" role="tab" aria-selected="true">📋 Список отделений</button>
       <button type="button" id="tab-show-map" class="map-tab-btn" role="tab" aria-selected="false">🗺️ Интерактивная карта</button>
     </div>
 
-    <!-- Two-Panel Layout (List & Interactive Map) -->
+    <!-- Main Two-Column Layout -->
     <div class="map-layout">
-      <!-- List Column -->
+      <!-- Left Column: Medical Centers Cards List -->
       <aside id="map-list-col" class="map-list-col" aria-label="Список медицинских учреждений">
-        <div class="list-col-header">
-          <h2>Экстренная помощь</h2>
+        <div class="centers-list-header list-col-header">
+          <h2>Ближайшие отделения</h2>
           <span id="centers-count" class="centers-count-badge" aria-live="polite">Загрузка...</span>
         </div>
         <div id="centers-list" class="centers-scroll-area">
@@ -129,19 +257,25 @@
         </div>
       </aside>
 
-      <!-- Map Column -->
+      <!-- Right Column: Leaflet OpenStreetMap View -->
       <section id="map-view-col" class="map-view-col hidden-mobile" aria-label="Карта расположения травмпунктов">
-        <div id="trauma-map" role="application" aria-label="Карта травмпунктов"></div>
+        <div id="trauma-map" role="application" aria-label="Карта травмпунктов OpenStreetMap" style="width:100%;height:100%;min-height:450px;"></div>
       </section>
     </div>
   </main>
 
   <footer>
-    <p>© 2026 Команда «Здоровое будущее». Конкурс «Добрые Сайты 2026».</p>
+    <div class="footer-container">
+      <p>✚ Первая помощь рядом • Открытая база данных OpenStreetMap (ODbL).</p>
+      <p class="emergency-phones">
+        Экстренные службы: <strong>112</strong> (единый номер) • <strong>103</strong> (скорая помощь)
+      </p>
+    </div>
   </footer>
 
-  <!-- Scripts -->
-  <script src="js/theme.js?v=2.2.0"></script>
-  <script src="js/map.js?v=2.2.0"></script>
+  <!-- Leaflet.js (100% Open-Source Map Engine) -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="js/theme.js"></script>
+  <script src="js/map.js?v=3.1.0"></script>
 </body>
 </html>

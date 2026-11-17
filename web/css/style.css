@@ -315,7 +315,7 @@ main {
 header {
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1200;
   background: var(--header-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -1519,21 +1519,28 @@ nav a[aria-current="page"] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
   margin: 0 auto;
+}
+
+.geo-actions-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .btn-re-geo {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.4rem 0.95rem;
+  padding: 0.45rem 1rem;
   border-radius: var(--m3-shape-full);
   background: var(--bg0_s);
   border: 1px solid var(--bg2);
   color: var(--fg1);
-  font-size: 0.85rem;
+  font-size: 0.86rem;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
@@ -1550,6 +1557,39 @@ nav a[aria-current="page"] {
 
 .btn-re-geo:active {
   transform: scale(0.97);
+}
+
+.btn-osm-sync {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 1.05rem;
+  border-radius: var(--m3-shape-full);
+  background: var(--bg0_s);
+  border: 1.5px solid var(--faded_blue, #7daea3);
+  color: var(--faded_blue, #7daea3);
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s var(--m3-motion);
+  box-shadow: var(--m3-elevation-1);
+}
+
+.btn-osm-sync:hover {
+  background: var(--faded_blue, #7daea3);
+  color: #14161b;
+  transform: translateY(-1px);
+  box-shadow: var(--m3-elevation-2);
+}
+
+.btn-osm-sync:active {
+  transform: scale(0.97);
+}
+
+.btn-osm-sync.syncing {
+  opacity: 0.75;
+  pointer-events: none;
 }
 
 .geo-status-badge {
@@ -1590,12 +1630,90 @@ nav a[aria-current="page"] {
 .map-controls-bar {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.15rem;
   margin-bottom: 1.25rem;
   background: var(--bg0_s);
   padding: 1rem 1.25rem;
   border-radius: var(--m3-shape-large);
   border: 1px solid var(--bg2);
+  position: relative;
+  z-index: 2;
+}
+
+/* City / Region Selector Control */
+.map-city-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+.map-city-label {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--fg1);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.city-select-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.city-select-icon {
+  position: absolute;
+  left: 1rem;
+  font-size: 1.15rem;
+  color: var(--fg3);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.map-city-select {
+  width: 100%;
+  padding: 0.85rem 2.5rem 0.85rem 2.85rem;
+  border-radius: var(--m3-shape-full);
+  border: 1.5px solid var(--bg2);
+  background: var(--bg0);
+  color: var(--fg0);
+  font-family: inherit;
+  font-size: 0.98rem;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  box-shadow: var(--m3-elevation-1);
+  transition: all 0.2s var(--m3-motion);
+}
+
+.map-city-select:hover {
+  border-color: var(--bg3);
+  background: var(--bg0_h, var(--bg0));
+}
+
+.map-city-select:focus {
+  border-color: var(--faded_blue, #7daea3);
+  box-shadow: 0 0 0 3px rgba(125, 174, 163, 0.25);
+}
+
+.city-select-arrow {
+  position: absolute;
+  right: 1.15rem;
+  font-size: 0.75rem;
+  color: var(--fg3);
+  pointer-events: none;
+  transition: transform 0.2s ease;
+}
+
+.map-city-select:focus ~ .city-select-arrow {
+  color: var(--faded_blue, #7daea3);
+  transform: rotate(180deg);
 }
 
 /* Category Dropdown Control */
@@ -1849,6 +1967,7 @@ nav a[aria-current="page"] {
   box-shadow: var(--m3-elevation-1);
 }
 
+.centers-list-header,
 .list-col-header {
   padding: 0.9rem 1.25rem;
   background: var(--bg1);
@@ -1856,19 +1975,32 @@ nav a[aria-current="page"] {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 52px;
+  box-sizing: border-box;
 }
 
+.centers-list-header h2,
 .list-col-header h2 {
   font-size: 1.05rem;
   font-weight: 700;
-  color: var(--fg1);
+  color: var(--fg0);
   margin: 0;
+  line-height: 1.25;
 }
 
 .centers-count-badge {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--fg3);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--fg1);
+  background: var(--bg2);
+  padding: 0.25rem 0.7rem;
+  border-radius: var(--m3-shape-full);
+  border: 1px solid var(--bg3);
+  white-space: nowrap;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
 }
 
 .centers-scroll-area {
@@ -1904,12 +2036,14 @@ nav a[aria-current="page"] {
   flex-direction: column;
   gap: 0.5rem;
   position: relative;
+  z-index: 1;
 }
 
 .trauma-card:hover {
   border-color: var(--bg3);
   transform: translateY(-2px);
   box-shadow: var(--m3-elevation-2);
+  z-index: 2;
 }
 
 .trauma-card:focus-visible,
@@ -1917,6 +2051,19 @@ nav a[aria-current="page"] {
   border-color: var(--faded_green);
   box-shadow: 0 0 0 2px var(--m3-primary);
   background: var(--bg0_s);
+  z-index: 3;
+}
+
+/* Elevate card when a dropdown is open inside it */
+.trauma-card.has-open-dropdown,
+.trauma-card:has(.nav-dropdown-wrapper.is-open) {
+  z-index: 60 !important;
+}
+
+.trauma-card.has-open-dropdown .trauma-card-actions,
+.trauma-card:has(.nav-dropdown-wrapper.is-open) .trauma-card-actions {
+  position: relative;
+  z-index: 70;
 }
 
 .trauma-card-header {
@@ -1967,6 +2114,25 @@ nav a[aria-current="page"] {
   border: 1px solid rgba(212, 180, 101, 0.45);
 }
 
+.badge-osm {
+  background: rgba(125, 174, 163, 0.22);
+  color: var(--faded_blue, #7daea3);
+  border: 1px solid rgba(125, 174, 163, 0.45);
+}
+
+.item-osm-live {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--m3-shape-full);
+  background: rgba(136, 171, 126, 0.18);
+  color: var(--neutral_green);
+  border: 1px solid rgba(136, 171, 126, 0.4);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
 .item-dist-pill {
   font-size: 0.82rem;
   font-weight: 700;
@@ -2009,14 +2175,20 @@ nav a[aria-current="page"] {
   margin: 0.25rem 0 0;
 }
 
-.trauma-card-phone {
-  font-size: 0.92rem;
+.trauma-card-phone,
+.trauma-card-phone-row {
+  font-size: 0.90rem;
   color: var(--fg2);
-  margin: 0.3rem 0;
-  line-height: 1.4;
+  margin: 0.35rem 0;
+  line-height: 1.45;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
 }
 
-.trauma-card-phone strong {
+.trauma-card-phone strong,
+.trauma-card-phone-row strong {
   color: var(--fg1);
 }
 
@@ -2078,6 +2250,236 @@ nav a[aria-current="page"] {
   transform: translateY(-1px);
 }
 
+/* Navigation Routing Dropdown Menu (Material You 3) */
+.nav-dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+  flex: 1 1 180px;
+}
+
+.nav-dropdown-wrapper.is-open {
+  z-index: 100 !important;
+}
+
+.nav-dropdown-toggle {
+  width: 100%;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--m3-shape-full);
+  font-size: 0.86rem;
+  font-weight: 700;
+  text-decoration: none;
+  text-align: center;
+  line-height: 1.25;
+  background: var(--bg2);
+  color: var(--fg1);
+  border: 1px solid var(--bg3);
+  transition: all 0.2s var(--m3-motion);
+  user-select: none;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.nav-dropdown-toggle:hover {
+  background: var(--bg3);
+  color: var(--fg0);
+  transform: translateY(-1px);
+}
+
+.nav-dropdown-toggle .nav-arrow {
+  display: inline-block;
+  transition: transform 0.2s ease;
+  font-size: 0.72rem;
+  margin-left: 2px;
+}
+
+.nav-dropdown-wrapper.is-open .nav-dropdown-toggle .nav-arrow {
+  transform: rotate(180deg);
+}
+
+.nav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  min-width: 200px;
+  background: var(--surface);
+  border: 1.5px solid var(--bg3);
+  border-radius: var(--m3-shape-medium);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.25);
+  padding: 6px;
+  display: none;
+  flex-direction: column;
+  gap: 3px;
+  z-index: 2000;
+  animation: navDropdownFadeIn 0.16s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.nav-dropdown-wrapper.drop-up .nav-dropdown-menu {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
+.nav-dropdown-wrapper.is-open .nav-dropdown-menu {
+  display: flex;
+}
+
+@keyframes navDropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.nav-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 8px 12px;
+  border-radius: var(--m3-shape-small);
+  color: var(--fg0) !important;
+  text-decoration: none !important;
+  font-size: 0.86rem;
+  font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.nav-menu-item:hover,
+.nav-menu-item:focus {
+  background: var(--surface-hover);
+  color: var(--fg1) !important;
+  transform: translateX(2px);
+}
+
+.nav-menu-icon {
+  font-size: 1.05rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  flex-shrink: 0;
+}
+
+.nav-menu-text {
+  flex: 1;
+  text-align: left;
+  line-height: 1.25;
+}
+
+.nav-menu-text strong {
+  font-weight: 700;
+  color: var(--fg0);
+}
+
+/* Custom styling for popup dropdown */
+.popup-nav-dropdown {
+  width: 100%;
+  display: block;
+  margin-top: 8px;
+  flex: none;
+}
+
+.popup-nav-dropdown .nav-dropdown-toggle {
+  width: 100%;
+  padding: 7px 12px;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  border: none;
+  border-radius: var(--m3-shape-full);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.popup-nav-dropdown .nav-dropdown-toggle:hover {
+  background: var(--btn-bg);
+  opacity: 0.92;
+}
+
+.popup-nav-dropdown .nav-dropdown-menu {
+  width: 100%;
+  min-width: 220px;
+}
+
+/* Phone Lookup Dropdown & Inline Link Styles */
+.phone-inline-dropdown {
+  display: inline-flex;
+  flex: none;
+  vertical-align: middle;
+  position: relative;
+}
+
+.phone-lookup-inline-btn {
+  width: auto !important;
+  min-height: auto;
+  padding: 0.22rem 0.65rem !important;
+  background: var(--bg1) !important;
+  color: var(--m3-primary) !important;
+  border: 1px dashed var(--m3-primary) !important;
+  border-radius: var(--m3-shape-small) !important;
+  font-size: 0.83rem !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  text-decoration: none;
+  transition: all 0.18s ease;
+  line-height: 1.3 !important;
+}
+
+.phone-lookup-inline-btn:hover {
+  background: var(--surface-hover) !important;
+  color: var(--faded_green) !important;
+  border-color: var(--faded_green) !important;
+  border-style: solid !important;
+  transform: translateY(-1px);
+}
+
+.phone-inline-dropdown .nav-dropdown-menu {
+  min-width: 215px;
+  left: 0;
+  right: auto;
+}
+
+.popup-phone-dropdown {
+  display: inline-flex;
+  flex: none;
+}
+
+.popup-phone-dropdown .phone-lookup-inline-btn {
+  padding: 0.15rem 0.5rem !important;
+  font-size: 0.78rem !important;
+  border-radius: 4px !important;
+}
+
+.phone-action-dropdown {
+  flex: 1 1 180px;
+}
+
+.phone-action-btn.call-action-btn {
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  border: none;
+}
+
+.phone-action-btn.call-action-btn:hover {
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
 /* Map View Column */
 .map-view-col {
   height: 100%;
@@ -2086,6 +2488,7 @@ nav a[aria-current="page"] {
   border: 1px solid var(--bg2);
   box-shadow: var(--m3-elevation-2);
   position: relative;
+  z-index: 1;
   background: var(--bg0_s);
 }
 
@@ -2094,31 +2497,9 @@ nav a[aria-current="page"] {
   height: 100%;
   min-height: 450px;
   background: var(--bg0);
-}
-
-/* Yandex Maps Container & Dark Mode adaptation */
-:root[data-theme="dark"] #trauma-map [class*="ymaps-2-1-ground-pane"],
-[data-theme="dark"] #trauma-map [class*="ymaps-2-1-ground-pane"] {
-  filter: brightness(0.75) invert(0.88) hue-rotate(180deg) saturate(0.35) contrast(1.1);
-}
-
-:root[data-theme="dark"] #trauma-map {
-  background: var(--bg0_h, #181c17);
-}
-
-/* Yandex Map Balloon Styling */
-[class*="ymaps-2-1"][class*="-balloon__content"] {
-  font-family: inherit !important;
-  padding: 10px 14px !important;
-  color: #1a1a1a !important;
-}
-
-.ymaps-balloon-card h4 {
-  font-size: 1.05rem;
-  font-weight: 700;
-  margin: 0 0 6px;
-  color: #111;
-  line-height: 1.3;
+  border-radius: inherit;
+  position: relative;
+  z-index: 1;
 }
 
 .ymaps-balloon-card p {
@@ -2350,3 +2731,159 @@ footer p {
     display: none !important;
   }
 }
+
+/* ==========================================================================
+   Leaflet / OpenStreetMap Custom Styling (Material You 3)
+   ========================================================================== */
+.leaflet-container {
+  font-family: inherit !important;
+  background: var(--bg0) !important;
+}
+
+.osm-marker-pin {
+  width: 34px;
+  height: 34px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+  border: 2px solid #ffffff;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.osm-marker-pin:hover {
+  transform: rotate(-45deg) scale(1.18);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.5);
+}
+
+.osm-marker-icon {
+  transform: rotate(45deg);
+  font-size: 16px;
+  line-height: 1;
+  user-select: none;
+}
+
+.osm-user-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #1976d2;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  position: relative;
+}
+
+.osm-user-pulse {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(25, 118, 210, 0.4);
+  animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.5); opacity: 0.8; }
+  80%, 100% { transform: scale(2.2); opacity: 0; }
+}
+
+.leaflet-popup-content-wrapper {
+  background: var(--surface) !important;
+  color: var(--fg0) !important;
+  border-radius: var(--m3-shape-medium) !important;
+  border: 1px solid var(--bg2) !important;
+  box-shadow: var(--m3-elevation-3) !important;
+  padding: 4px !important;
+  overflow: visible !important;
+}
+
+.leaflet-popup-tip {
+  background: var(--surface) !important;
+}
+
+.leaflet-popup-content {
+  margin: 10px 12px !important;
+  line-height: 1.4 !important;
+  overflow: visible !important;
+}
+
+.leaflet-popup-content .osm-balloon-card h4,
+.leaflet-popup-content .ymaps-balloon-card h4 {
+  color: var(--fg0) !important;
+}
+
+.leaflet-popup-content .osm-balloon-card p,
+.leaflet-popup-content .ymaps-balloon-card p {
+  color: var(--fg2) !important;
+}
+
+.leaflet-control-zoom {
+  border-radius: var(--m3-shape-medium) !important;
+  border: 1px solid var(--bg2) !important;
+  overflow: hidden;
+  box-shadow: var(--m3-elevation-2) !important;
+}
+
+.leaflet-control-zoom a {
+  background: var(--surface) !important;
+  color: var(--fg0) !important;
+  border-color: var(--bg2) !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: var(--surface-hover) !important;
+  color: var(--fg1) !important;
+}
+
+.leaflet-control-attribution {
+  display: none !important;
+}
+
+.engine-switcher-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.engine-switcher-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--fg3);
+}
+
+.engine-switcher-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: var(--bg0_s);
+  border: 1.5px solid var(--bg2);
+  padding: 0.35rem 0.9rem;
+  border-radius: var(--m3-shape-full);
+  font-size: 0.86rem;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--fg2);
+  transition: all 0.2s var(--m3-motion);
+  box-shadow: var(--m3-elevation-1);
+}
+
+.engine-switcher-badge:hover {
+  background: var(--bg1);
+  color: var(--fg0);
+  border-color: var(--btn-bg);
+  transform: translateY(-1px);
+}
+
+.engine-switcher-badge.active {
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  border-color: var(--btn-bg);
+}
+
