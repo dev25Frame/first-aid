@@ -191,92 +191,6 @@
   --m3-elevation-3: 0px 4px 12px 3px rgba(0, 0, 0, 0.55), 0px 1px 3px 0px rgba(0, 0, 0, 0.3);
 }
 
-/* System Dark Theme Preference (when no explicit light preference stored) */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not([data-theme="dark"]) {
-    /* --- BG --- */
-    --bg0_h: #181c17;
-    --bg0: #1c241b;
-    --bg0_s: #252e23;
-    --bg1: #263124;
-    --bg2: #344031;
-    --bg3: #445141;
-    --bg4: #556252;
-    /* --- FG --- */
-    --fg0: #f1f3e0;
-    --fg1: #e2e8cc;
-    --fg2: #d2dcb6;
-    --fg3: #bccdb4;
-    --fg4: #a1bc98;
-    /* --- GRAY --- */
-    --gray: #778873;
-    --gray_alt: #8e9e8b;
-    /* --- RED --- */
-    --neutral_red: #d6706e;
-    --bright_red: #f28f8d;
-    --faded_red: #a84542;
-    /* --- GREEN --- */
-    --neutral_green: #88ab7e;
-    --bright_green: #b5d4ab;
-    --faded_green: #5a794c;
-    /* --- YELLOW --- */
-    --neutral_yellow: #d4b465;
-    --bright_yellow: #edd085;
-    --faded_yellow: #a6822c;
-    /* --- BLUE --- */
-    --neutral_blue: #72a4b8;
-    --bright_blue: #91c4d9;
-    --faded_blue: #477685;
-    /* --- PURPLE --- */
-    --neutral_purple: #b68fb0;
-    --bright_purple: #d2abc9;
-    --faded_purple: #825b7a;
-    /* --- AQUA --- */
-    --neutral_aqua: #82b3a4;
-    --bright_aqua: #9ed0c1;
-    --faded_aqua: #4e8071;
-    /* --- ORANGE --- */
-    --neutral_orange: #db8e5c;
-    --bright_orange: #f2a877;
-    --faded_orange: #ba6630;
-
-    --m3-primary: var(--bright_green);
-    --header-bg: rgba(24, 28, 23, 0.88);
-    --header-border: var(--bg2);
-    --surface: var(--bg0);
-    --surface-hover: var(--bg0_s);
-    --btn-bg: var(--neutral_green);
-    --btn-fg: #181c17;
-    --btn-hover-bg: var(--bright_green);
-    --btn-hover-fg: #181c17;
-    --link-color: var(--bright_green);
-    --footer-bg: #131712;
-    --footer-fg: var(--fg3);
-    --footer-border: var(--bg2);
-
-    --badge-urgent-bg: rgba(214, 112, 110, 0.18);
-    --badge-urgent-fg: var(--bright_red);
-    --badge-psy-bg: rgba(182, 143, 176, 0.2);
-    --badge-psy-fg: var(--bright_purple);
-    --badge-trauma-bg: var(--bg2);
-    --badge-trauma-fg: var(--bright_green);
-    --badge-myth-bg: rgba(214, 112, 110, 0.18);
-    --badge-myth-fg: var(--bright_red);
-
-    --warning-bg: rgba(214, 112, 110, 0.15);
-    --warning-fg: var(--bright_red);
-    --warning-border: var(--neutral_red);
-
-    --notice-bg: rgba(219, 142, 92, 0.15);
-    --notice-fg: var(--bright_orange);
-    --notice-border: var(--neutral_orange);
-
-    --m3-elevation-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.35), 0px 1px 2px 0px rgba(0, 0, 0, 0.2);
-    --m3-elevation-2: 0px 2px 6px 2px rgba(0, 0, 0, 0.45), 0px 1px 2px 0px rgba(0, 0, 0, 0.25);
-    --m3-elevation-3: 0px 4px 12px 3px rgba(0, 0, 0, 0.55), 0px 1px 3px 0px rgba(0, 0, 0, 0.3);
-  }
-}
-
 /* Smooth theme transition */
 html.theme-transition,
 html.theme-transition *,
@@ -2502,53 +2416,6 @@ nav a[aria-current="page"] {
   z-index: 1;
 }
 
-.ymaps-balloon-card p {
-  font-size: 0.88rem;
-  color: #444;
-  margin: 0 0 5px;
-  line-height: 1.35;
-}
-
-.balloon-phone-link {
-  color: #1565c0 !important;
-  font-weight: 700 !important;
-  text-decoration: underline !important;
-}
-
-.balloon-phone-link:hover {
-  color: #0d47a1 !important;
-}
-
-.ymaps-balloon-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.ymaps-balloon-btn {
-  flex: 1;
-  padding: 6px 10px;
-  border-radius: 16px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-.ymaps-btn-call {
-  background: var(--btn-bg, #2e7d32);
-  color: var(--btn-fg, #fff) !important;
-}
-
-.ymaps-btn-route {
-  background: #f0f0f0;
-  color: #111 !important;
-  border: 1px solid #ccc;
-}
-
 .no-results-card {
   text-align: center;
   padding: 3rem 1.5rem;
@@ -2811,13 +2678,11 @@ footer p {
   overflow: visible !important;
 }
 
-.leaflet-popup-content .osm-balloon-card h4,
-.leaflet-popup-content .ymaps-balloon-card h4 {
+.leaflet-popup-content .osm-balloon-card h4 {
   color: var(--fg0) !important;
 }
 
-.leaflet-popup-content .osm-balloon-card p,
-.leaflet-popup-content .ymaps-balloon-card p {
+.leaflet-popup-content .osm-balloon-card p {
   color: var(--fg2) !important;
 }
 
@@ -2840,7 +2705,21 @@ footer p {
 }
 
 .leaflet-control-attribution {
-  display: none !important;
+  background: var(--surface) !important;
+  color: var(--fg3) !important;
+  font-size: 0.72rem !important;
+  padding: 2px 8px !important;
+  border-radius: var(--m3-shape-xs) 0 0 0;
+  opacity: 0.88;
+}
+
+.leaflet-control-attribution a {
+  color: var(--m3-primary) !important;
+  text-decoration: none;
+}
+
+.leaflet-control-attribution a:hover {
+  text-decoration: underline;
 }
 
 .engine-switcher-bar {

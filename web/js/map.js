@@ -1862,13 +1862,13 @@
     return R * c;
   }
 
-  // Тайловые подложки без водяных знаков и блокировок
+  // Тайловые подложки OpenStreetMap (светлая) и CARTO Dark (тёмная)
   function getTileUrl() {
     var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     if (isDark) {
-      return 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}';
+      return 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
     }
-    return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+    return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
   }
 
   // Инициализация карты Leaflet
@@ -1882,11 +1882,12 @@
       center: defaultCoords,
       zoom: 11,
       zoomControl: true,
-      attributionControl: false
+      attributionControl: true
     });
 
     tileLayer = L.tileLayer(getTileUrl(), {
-      maxZoom: 19
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>'
     }).addTo(map);
 
     markersGroup = L.featureGroup().addTo(map);
@@ -1927,7 +1928,12 @@
   // Подгрузка внешнего файла data/trauma-centers.json (динамическое расширение базы)
   function loadLocalJsonDataset() {
     fetch('data/trauma-centers.json')
-      .then(function (res) { return res.json(); })
+      .then(function (res) {
+        if (!res.ok) {
+          throw new Error('HTTP ' + res.status);
+        }
+        return res.json();
+      })
       .then(function (data) {
         if (Array.isArray(data) && data.length > 0) {
           VERIFIED_CENTERS = data;
@@ -1936,8 +1942,9 @@
           }
         }
       })
-      .catch(function () {
+      .catch(function (err) {
         // Офлайн или локальный файл — продолжаем со встроенным VERIFIED_CENTERS
+        console.warn('Локальный датасет недоступен, используется встроенная база:', err);
       });
   }
 
@@ -2130,7 +2137,7 @@
         var isChild = /детск|педиатрич/i.test(name) || /детск/i.test(address);
         var isEye = /глаз|офтальм/i.test(name);
         var isBurn = /ожог|комбустиол/i.test(name);
-        var is24h = /круглосуточ|24|травм/i.test(name) || true; // Травмпункты экстренные
+        var is24h = /круглосуточ|24|травм|неотлож/i.test(name);
 
         var osmId = props.osm_id ? Math.abs(props.osm_id) : Math.floor(Math.random() * 90000 + 10000);
 
@@ -2145,7 +2152,7 @@
           is24h: is24h,
           address: address,
           metro: props.district || city,
-          hours: is24h ? 'Круглосуточно (24/7)' : 'Режим работы в OpenStreetMap',
+          hours: is24h ? 'Круглосуточно (24/7)' : 'Уточняйте режим работы по телефону',
           lat: oLat,
           lng: oLng,
           desc: 'Отделение найдено в открытой глобальной базе OpenStreetMap. Координаты подтверждены OSM ID ' + osmId + '.',

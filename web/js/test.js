@@ -70,14 +70,34 @@ const progressBarEl = document.getElementById('progress-bar');
 const resultEl = document.getElementById('result');
 const bestScoreBadgeEl = document.getElementById('best-score-badge');
 
-// --- Работа с localStorage ---
+// --- Безопасная работа с localStorage (защита от исключений в Safari Incognito) ---
+const storage = {
+    get(key) {
+        try {
+            return localStorage.getItem(key);
+        } catch (e) {
+            return null;
+        }
+    },
+    set(key, val) {
+        try {
+            localStorage.setItem(key, val);
+        } catch (e) {}
+    },
+    remove(key) {
+        try {
+            localStorage.removeItem(key);
+        } catch (e) {}
+    }
+};
+
 function getBestScore() {
-    const stored = localStorage.getItem('first_aid_best_score');
+    const stored = storage.get('first_aid_best_score');
     if (stored === null) return null;
     return {
         score: parseInt(stored, 10),
-        total: parseInt(localStorage.getItem('first_aid_total_questions') || questions.length, 10),
-        date: localStorage.getItem('first_aid_best_date') || ''
+        total: parseInt(storage.get('first_aid_total_questions') || questions.length, 10),
+        date: storage.get('first_aid_best_date') || ''
     };
 }
 
@@ -97,9 +117,9 @@ function updateBestScoreBadge() {
         if (clearBtn) {
             clearBtn.onclick = () => {
                 if (confirm('Сбросить сохранённый рекорд теста?')) {
-                    localStorage.removeItem('first_aid_best_score');
-                    localStorage.removeItem('first_aid_best_date');
-                    localStorage.removeItem('first_aid_total_questions');
+                    storage.remove('first_aid_best_score');
+                    storage.remove('first_aid_best_date');
+                    storage.remove('first_aid_total_questions');
                     updateBestScoreBadge();
                 }
             };
@@ -259,10 +279,14 @@ function drawCertificate(userName, userScore, total) {
 
     // Дата и ID сертификата
     const today = new Date().toLocaleDateString('ru-RU');
-    let certId = localStorage.getItem('first_aid_cert_id');
+    let certId = storage.get('first_aid_cert_id');
     if (!certId) {
-        certId = Math.floor(1000 + Math.random() * 9000).toString();
-        localStorage.setItem('first_aid_cert_id', certId);
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            certId = crypto.randomUUID().slice(0, 8).toUpperCase();
+        } else {
+            certId = Math.floor(100000 + Math.random() * 900000).toString();
+        }
+        storage.set('first_aid_cert_id', certId);
     }
 
     ctx.textAlign = 'left';
@@ -302,8 +326,19 @@ function loadQuestion() {
     q.options.forEach((opt, index) => {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.innerHTML = `<span>${opt}</span><span class="opt-status-icon" style="opacity:0.4; font-size:1.05rem;">⚪</span>`;
         btn.classList.add('option-btn');
+
+        const textSpan = document.createElement('span');
+        textSpan.textContent = opt;
+
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'opt-status-icon';
+        iconSpan.style.opacity = '0.4';
+        iconSpan.style.fontSize = '1.05rem';
+        iconSpan.textContent = '⚪';
+
+        btn.appendChild(textSpan);
+        btn.appendChild(iconSpan);
         btn.onclick = () => selectAnswer(index, btn);
         optionsEl.appendChild(btn);
     });
@@ -328,10 +363,10 @@ function selectAnswer(selectedIndex, selectedBtn) {
         }
     });
 
-    if (selectedIndex === q.correct) {
+    const isCorrect = (selectedIndex === q.correct);
+    if (isCorrect) {
         score++;
         explanationEl.className = 'quiz-explanation correct';
-        explanationEl.innerHTML = `<strong>Верно!</strong> ${q.explanation}`;
     } else {
         selectedBtn.classList.add('wrong');
         const icon = selectedBtn.querySelector('.opt-status-icon');
@@ -340,8 +375,13 @@ function selectAnswer(selectedIndex, selectedBtn) {
             icon.style.opacity = '1';
         }
         explanationEl.className = 'quiz-explanation wrong';
-        explanationEl.innerHTML = `<strong>Неверно.</strong> ${q.explanation}`;
     }
+
+    explanationEl.textContent = '';
+    const strong = document.createElement('strong');
+    strong.textContent = isCorrect ? 'Верно! ' : 'Неверно. ';
+    explanationEl.appendChild(strong);
+    explanationEl.appendChild(document.createTextNode(q.explanation));
 
     explanationEl.style.display = 'block';
     nextBtn.disabled = false;
@@ -360,9 +400,9 @@ function showResult() {
     const today = new Date().toLocaleDateString('ru-RU');
 
     if (!previousBest || score > previousBest.score) {
-        localStorage.setItem('first_aid_best_score', score.toString());
-        localStorage.setItem('first_aid_total_questions', total.toString());
-        localStorage.setItem('first_aid_best_date', today);
+        storage.set('first_aid_best_score', score.toString());
+        storage.set('first_aid_total_questions', total.toString());
+        storage.set('first_aid_best_date', today);
         isNewRecord = previousBest !== null && score > previousBest.score;
         updateBestScoreBadge();
     }
@@ -375,7 +415,7 @@ function showResult() {
         feedback = 'В экстренной ситуации важна каждая секунда. Обязательно изучите инструкции в нашем разделе обучения.';
     }
 
-    const savedName = localStorage.getItem('first_aid_user_name') || '';
+    const savedName = (storage.get('first_aid_user_name') || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 
     let certBlockHtml = '';
     if (score >= 3) {
@@ -437,7 +477,7 @@ function showResult() {
             }
 
             certError.style.display = 'none';
-            localStorage.setItem('first_aid_user_name', rawName);
+            storage.set('first_aid_user_name', rawName);
 
             const dataUrl = drawCertificate(rawName, score, total);
             imagePreview.src = dataUrl;
