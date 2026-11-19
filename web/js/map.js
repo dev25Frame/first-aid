@@ -1,5 +1,5 @@
 /**
- * Интерактивная карта травмпунктов и больниц • Первая помощь рядом
+ * Интерактивная карта травмпунктов и больниц • Faid
  * Версия на базе OpenStreetMap (OSM) и библиотеки Leaflet.js
  * 100% Open-Source: работает без коммерческих API-ключей и лимитов
  * Динамическая подгрузка учреждений из базы данных OpenStreetMap (Photon OSM API & Overpass)
@@ -1862,13 +1862,13 @@
     return R * c;
   }
 
-  // Тайловые подложки OpenStreetMap (светлая) и CARTO Dark (тёмная)
+  // Тайловые подложки без водяных знаков и блокировок
   function getTileUrl() {
     var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     if (isDark) {
-      return 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+      return 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}';
     }
-    return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+    return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
   }
 
   // Инициализация карты Leaflet
@@ -1882,12 +1882,11 @@
       center: defaultCoords,
       zoom: 11,
       zoomControl: true,
-      attributionControl: true
+      attributionControl: false
     });
 
     tileLayer = L.tileLayer(getTileUrl(), {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>'
+      maxZoom: 19
     }).addTo(map);
 
     markersGroup = L.featureGroup().addTo(map);

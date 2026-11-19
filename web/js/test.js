@@ -192,7 +192,7 @@ function drawCertificate(userName, userScore, total) {
     ctx.textAlign = 'center';
     ctx.font = 'bold 15px "Segoe UI", Arial, sans-serif';
     ctx.fillStyle = '#556252';
-    ctx.fillText('КОНКУРС «ДОБРЫЕ САЙТЫ 2026» • ПРОЕКТ «ПЕРВАЯ ПОМОЩЬ РЯДОМ»', centerX, 190);
+    ctx.fillText('КОНКУРС «ДОБРЫЕ САЙТЫ 2026» • ПРОЕКТ «FAID»', centerX, 190);
 
     // Главный заголовок СЕРТИФИКАТ
     ctx.font = 'bold 48px "Georgia", "Times New Roman", serif';
@@ -297,7 +297,7 @@ function drawCertificate(userName, userScore, total) {
 
     ctx.textAlign = 'right';
     ctx.fillText(`Сертификат № FA-2026-${certId}`, width - 100, 715);
-    ctx.fillText('Команда «Здоровое будущее»', width - 100, 738);
+    ctx.fillText('Платформа Faid • «Здоровое будущее»', width - 100, 738);
 
     return canvas.toDataURL('image/png');
 }
@@ -434,7 +434,7 @@ function showResult() {
                         <img id="cert-image-preview" alt="Именной сертификат" />
                     </div>
                     <div class="cert-download-actions">
-                        <a id="cert-download-btn" class="btn btn-download" download="Сертификат_Первая_помощь.png">📥 Скачать сертификат (PNG)</a>
+                        <a id="cert-download-btn" class="btn btn-download" download="Сертификат_Faid.png">📥 Скачать сертификат (PNG)</a>
                     </div>
                 </div>
             </div>
@@ -482,7 +482,7 @@ function showResult() {
             const dataUrl = drawCertificate(rawName, score, total);
             imagePreview.src = dataUrl;
             downloadBtn.href = dataUrl;
-            downloadBtn.download = `Сертификат_${rawName.replace(/\s+/g, '_')}.png`;
+            downloadBtn.download = `Сертификат_Faid_${rawName.replace(/\s+/g, '_')}.png`;
             previewBox.style.display = 'block';
 
             previewBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

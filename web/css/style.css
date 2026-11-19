@@ -2705,21 +2705,7 @@ footer p {
 }
 
 .leaflet-control-attribution {
-  background: var(--surface) !important;
-  color: var(--fg3) !important;
-  font-size: 0.72rem !important;
-  padding: 2px 8px !important;
-  border-radius: var(--m3-shape-xs) 0 0 0;
-  opacity: 0.88;
-}
-
-.leaflet-control-attribution a {
-  color: var(--m3-primary) !important;
-  text-decoration: none;
-}
-
-.leaflet-control-attribution a:hover {
-  text-decoration: underline;
+  display: none !important;
 }
 
 .engine-switcher-bar {
